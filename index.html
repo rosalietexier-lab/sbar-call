@@ -99,6 +99,12 @@ textarea{width:100%;min-height:96px;border:1px solid var(--line);border-radius:1
 .legend{font-size:11px;color:var(--mute);margin-top:6px}
 .doc p{font-size:15px}
 .spk{font-size:12px;border:1px solid var(--line);border-radius:12px;padding:1px 8px;margin-left:6px;color:var(--deep);background:#fff}
+.lv{display:grid;gap:6px;margin:8px 0}
+.lvb{text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700;color:var(--ink)}
+.lvb:hover{background:var(--soft)}
+.lvb.sel{border:2px solid var(--deep);background:var(--soft);color:var(--deep)}
+.msg.ok{background:var(--green);color:var(--gtx)}
+.ctgsvg{width:100%;height:auto;display:block;background:#fffdfb;border:1px solid var(--line);border-radius:12px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -129,10 +135,17 @@ textarea{width:100%;min-height:96px;border:1px solid var(--line);border-radius:1
   <!-- PRACTICE -->
   <section id="sPractice" hidden>
     <button class="link" id="backBtn" data-demo="back-home" data-i18n="back"></button>
-    <div class="alert"><div class="tag" data-i18n="scenarioLabel"></div><b id="alertT"></b><p id="alertL"></p></div>
+    <div class="alert"><div class="tag" id="scLbl"></div><b id="alertT"></b><p id="alertL"></p></div>
     <div class="grid">
       <div class="card" id="chartCard">
         <div class="row2"><h3 data-i18n="chartTitle" style="margin:0"></h3><button class="btn s" id="chartToggle" data-demo="chart-toggle"></button></div>
+        <div id="ctgBox" hidden>
+          <h3 data-i18n="ctgPick"></h3>
+          <svg id="ctgSvg" class="ctgsvg" viewBox="0 0 320 150" role="img" data-demo="ctg-trace"></svg>
+          <div class="lv" id="lvBtns" data-demo="ctg-levels"></div>
+          <div class="msg" id="lvMsg" role="status" data-demo="ctg-level-feedback" hidden></div>
+          <p class="tip" data-i18n="lvTip"></p>
+        </div>
         <ul class="chart" id="chartList" data-demo="chart"></ul>
         <p class="hide" id="chartHid" hidden data-i18n="chartHidden"></p>
         <p class="tip" data-i18n="tipSbar" style="margin:10px 0 0"></p>
@@ -165,6 +178,7 @@ textarea{width:100%;min-height:96px;border:1px solid var(--line);border-radius:1
     <h2 class="rtitle"><span data-i18n="resultTitle"></span><span class="tm" id="resTime"></span></h2>
     <div id="resMeters" data-demo="result-meters"></div>
     <div class="note" id="resMissing" data-demo="missing-note"></div>
+    <div class="card" id="resLevelCard" data-demo="level-result" hidden><h3 data-i18n="lvTitle"></h3><p id="resLevel"></p></div>
     <div class="card"><h3 data-i18n="checkTitle"></h3><div id="resChips" data-demo="sbar-check"></div></div>
     <div class="card"><h3 data-i18n="transcriptTitle"></h3><p class="tx" id="resText" data-demo="transcript"></p><p class="legend" data-i18n="legend"></p></div>
     <div class="card doc"><h3>🩺 <span data-i18n="doctorReply"></span><button class="spk" id="spkBtn" data-demo="doctor-speak" data-i18n-aria="speakAria">🔊</button></h3><p id="resDoctor" data-demo="doctor-reply"></p></div>
@@ -202,15 +216,19 @@ ja:{
  checkTitle:"SBARチェック",transcriptTitle:"あなたの報告",legend:"緑＝伝えられた情報　赤＝不要な言葉",
  doctorReply:"医師の返事",speakAria:"医師の返事を読み上げる",retry:"もう一度練習",toHome:"場面にもどる",
  missing:"⚠ 抜け：{list}",noMissing:"✅ 必要な情報はそろっています",secs:"{n}秒",
- fbPriNoBleed:"出血量が伝わっていません。いちばん重要な情報です。",
- fbPriGood:"出血量を早い段階で伝えられています。",
- fbPriLate:"重要情報の中で出血が{n}番目。最初に言いましょう。",
+ fbPriNoBleed:"{x}が伝わっていません。いちばん重要な情報です。",
+ fbPriGood:"{x}を早い段階で伝えられています。",
+ fbPriLate:"重要情報の中で{x}が{n}番目。最初に言いましょう。",
  fbPriReq:"最後に「来てほしい・指示がほしい」と依頼をはっきり伝えましょう。",
  fbBrFiller:"「えーと」などの不要な言葉が{n}回ありました。",
  fbBrLong:"約{n}秒でした。目標は{m}秒以内。要点だけに絞りましょう。",
  fbBrGood:"短く、要点を押さえて言えています。",
  fbShort:"短すぎて情報が足りません。",
- errEmpty:"（報告なし）"
+ errEmpty:"（報告なし）",
+ ctgPick:"CTGを読んでレベルを選ぶ",ctgAria:"CTG波形：胎児心拍（上）と子宮収縮（下）",
+ lvOk:"正解！",lvNg:"もう一度、波形を見てみましょう。",
+ lvTip:"学習用に簡略化した5段階分類です。実際は施設の基準に従ってください。",
+ lvTitle:"CTGレベル分類",lvYours:"あなたの判定：{a}",lvCorrect:"正解：{a}",lvNone:"レベルが未選択でした。",caseLbl:"症例 {n}/{m}"
 },
 en:{
  title:"SBAR Call | Emergency Report Training",langAria:"Switch language",
@@ -240,21 +258,25 @@ en:{
  checkTitle:"SBAR check",transcriptTitle:"Your report",legend:"Green = info given   Red = filler words",
  doctorReply:"Doctor's reply",speakAria:"Read the doctor's reply aloud",retry:"Practice again",toHome:"Back to scenarios",
  missing:"⚠ Missing: {list}",noMissing:"✅ All key information is included",secs:"{n} sec",
- fbPriNoBleed:"Blood loss wasn't mentioned. It's the most important fact.",
- fbPriGood:"You gave the blood loss early. Well done.",
- fbPriLate:"Blood loss came {n}th among the key facts. Say it first.",
+ fbPriNoBleed:"{x} wasn't mentioned. It's the most important fact.",
+ fbPriGood:"You gave {x} early. Well done.",
+ fbPriLate:"{x} was number {n} among the key facts. Say it first.",
  fbPriReq:"End with a clear request: what you need the doctor to do.",
  fbBrFiller:"{n} filler word(s) like \"um\" were used.",
  fbBrLong:"It took about {n} sec. Aim for under {m} sec. Keep only the essentials.",
  fbBrGood:"Short and to the point.",
  fbShort:"Too short to carry the key facts.",
- errEmpty:"(no report)"
+ errEmpty:"(no report)",
+ ctgPick:"Read the CTG and pick a level",ctgAria:"CTG trace: fetal heart rate (top) and contractions (bottom)",
+ lvOk:"Correct!",lvNg:"Take another look at the trace.",
+ lvTip:"A simplified 5-level scale for practice. In real care, follow your facility's criteria.",
+ lvTitle:"CTG level",lvYours:"Your level: {a}",lvCorrect:"Answer: {a}",lvNone:"No level was selected.",caseLbl:"CASE {n}/{m}"
 }};
 
 const SCENES=[{
- id:"pph",icon:"🩸",target:30,
+ id:"pph",icon:"🩸",target:30,lead:"bleed",
  title:{ja:"産後の大量出血",en:"Postpartum hemorrhage"},
- sub:{ja:"新人向け・約1分で練習できます",en:"For new staff · about 1 minute"},
+ sub:{ja:"軽症から重症まで多数の症例をランダム出題",en:"Many cases, mild to critical, in random order"},
  alert:{ja:"⚠ 産後30分・出血持続",en:"⚠ 30 min after birth · bleeding continues"},
  line:{ja:"「605号室の患者さん、出血が止まりません」",en:"\"Room 605 — the patient's bleeding won't stop.\""},
  greet:{ja:"「はい、産科当直。どうした？ 手短に」",en:"\"OB on call. What's going on? Be quick.\""},
@@ -299,12 +321,483 @@ const SCENES=[{
   long:{ja:"えーと、あの、605号室の方なんですけど、えーと、朝から陣痛が来ていて、順調に進んでいたんですが、先ほど分娩になりまして、あの、胎盤も無事に出て、お子さんも元気で、それで、血圧は90/50くらいで、えっと、子宮もちょっと柔らかい感じがして、それで出血が、まあ、測ったら800mlでした。あの、できれば診察をお願いしたいです。",
         en:"Um, so, uh, Room 605, she delivered this morning after a long labor, and the baby is doing fine, and, um, the placenta came out okay, and, you know, her BP is about 90 over 50, and the uterus feels a bit soft, and then, uh, the bleeding was, you know, 800 ml when we measured it. So, um, could you please come and see her if you have time?"}
  }
+},{
+ id:"ctg",icon:"📈",target:30,lead:"decel",answer:4,
+ title:{ja:"CTGモニターの判読と報告",en:"Reading and reporting CTG"},
+ sub:{ja:"多数の波形をランダム出題。レベル分類 → 報告",en:"Many traces in random order: pick a level, then report"},
+ alert:{ja:"⚠ 分娩進行中・胎児心拍に変化",en:"⚠ In labor · fetal heart rate changing"},
+ line:{ja:"「612号室、CTGの波形が気になります」",en:"\"Room 612 — I'm worried about the CTG trace.\""},
+ greet:{ja:"「はい、産科当直。波形はどう？ 手短に」",en:"\"OB on call. How does the trace look? Be quick.\""},
+ ok:{ja:"「了解、すぐ行く。左側臥位にして酸素投与、モニタリングは続けて」",en:"\"Got it, I'm coming. Turn her to the left side, give oxygen, and keep monitoring.\""},
+ chart:[
+  {i:"🛏",ja:"612号室",en:"Room 612"},
+  {i:"👩",ja:"32歳・経産婦・妊娠39週",en:"32 y/o, second birth, 39 weeks"},
+  {i:"💧",ja:"オキシトシン投与中",en:"On an oxytocin drip"},
+  {i:"📈",ja:"基線 150 bpm",en:"Baseline 150 bpm"},
+  {i:"〰",ja:"細変動 減少（5bpm以下）",en:"Variability reduced (5 bpm or less)"},
+  {i:"⬇",ja:"子宮収縮のたびに遅発一過性徐脈",en:"Late decelerations with every contraction"},
+  {i:"🫄",ja:"約3分ごとの子宮収縮",en:"Contractions about every 3 min"}],
+ levels:[
+  {ja:"レベル1　正常",en:"Level 1 · Normal"},
+  {ja:"レベル2　亜正常",en:"Level 2 · Slightly unusual"},
+  {ja:"レベル3　軽度異常",en:"Level 3 · Mildly abnormal"},
+  {ja:"レベル4　中等度異常",en:"Level 4 · Moderately abnormal"},
+  {ja:"レベル5　高度異常",en:"Level 5 · Severely abnormal"}],
+ levelWhy:{ja:"基線は正常ですが、細変動が減少し、遅発一過性徐脈が反復しているため中等度異常（レベル4）です。",en:"The baseline is normal, but variability is reduced and late decelerations repeat, so this is moderately abnormal (Level 4)."},
+ elements:[
+  {id:"who",l:"S",w:5,key:false,label:{ja:"患者の特定（部屋・年齢）",en:"Who (room, age)"},
+   ask:{ja:"「どの患者さん？ 部屋番号は？」",en:"\"Which patient? What room?\""},
+   ja:/\d{1,4}\s*号室|号室|\d+\s*歳|経産|初産|妊婦|産婦/,
+   en:/room\s*\d+|\d+[- ]?(?:years?|yo|y\/o)|\bpatient\b|\bwoman\b/i},
+  {id:"decel",l:"S",w:30,key:true,label:{ja:"主な異常所見（徐脈など）",en:"Main abnormal finding (e.g. decelerations)"},
+   ask:{ja:"「波形のどこが問題？ 徐脈はある？」",en:"\"What's wrong with the trace? Any decelerations?\""},
+   ja:/遅発|変動一過性|早発|一過性徐脈|徐脈|デセル|頻脈|サイナソイダル/,
+   en:/late decel|decelerations?|\bdecels?\b|tachycardia|bradycardia|sinusoidal/i},
+  {id:"baseline",l:"A",w:15,key:true,label:{ja:"基線（心拍数）",en:"Baseline rate"},
+   ask:{ja:"「基線は何bpm？」",en:"\"What's the baseline rate?\""},
+   ja:/基線|ベースライン|\d{2,3}\s*(?:bpm|拍)/i,
+   en:/baseline|\d{2,3}\s*bpm/i},
+  {id:"var",l:"A",w:15,key:true,label:{ja:"細変動",en:"Variability"},
+   ask:{ja:"「細変動はある？」",en:"\"Is there variability?\""},
+   ja:/細変動|変動(?:が)?(?:減少|消失|乏しい)/,
+   en:/variability/i},
+  {id:"contr",l:"B",w:5,key:false,label:{ja:"子宮収縮・陣痛",en:"Contractions"},
+   ask:{ja:"「陣痛の間隔は？」",en:"\"How often are the contractions?\""},
+   ja:/子宮収縮|陣痛|張り/,
+   en:/contractions?|toco|labor pains?/i},
+  {id:"level",l:"A",w:15,key:true,label:{ja:"レベル分類",en:"CTG level"},
+   ask:{ja:"「レベルはいくつと判断してる？」",en:"\"What level do you judge it to be?\""},
+   ja:/レベル\s*[1-5]/,
+   en:/level\s*[1-5]/i},
+  {id:"request",l:"R",w:15,key:true,label:{ja:"依頼内容",en:"Your request"},
+   ask:{ja:"「で、私に何をしてほしい？ はっきり言って」",en:"\"So what do you need from me? Be specific.\""},
+   ja:/診察|診て|来て|きて|指示|オキシトシン|中止|体位|酸素|至急|お願い|応援|帝王切開|カイザー|手術室|グレードA/,
+   en:/please (?:come|see|check|examine)|come (?:now|right|to|and)|orders?\b|stop(?:ping)? (?:the )?oxytocin|oxygen|reposition|\bhelp\b|immediately|right away|could you|can you|c-section|cesarean|caesarean|grade a|operating (?:room|theat)/i}
+ ],
+ samples:{
+  good:{ja:"612号室、32歳の経産婦、オキシトシン投与中です。基線150、細変動が減少し、子宮収縮のたびに遅発一過性徐脈が反復しています。レベル4と判断します。オキシトシンを止めて、至急診察をお願いします。",
+        en:"Room 612, a 32-year-old woman on oxytocin. Baseline is 150 bpm with reduced variability, and late decelerations repeat with every contraction. I assess Level 4. Please come now to examine her and give orders on stopping oxytocin."},
+  long:{ja:"えーと、あの、612号室の方なんですけど、えーと、昨日から入院されていて、順調に陣痛が来ていたんですが、あの、オキシトシンを使っていて、それで、基線は150くらいで、えっと、細変動がちょっと少ない感じで、まあ、収縮のあとに遅発一過性徐脈が出ていて、レベルは4かなと。できれば診察をお願いしたいです。",
+        en:"Um, so, uh, Room 612, she was admitted yesterday and her labor has been going well, and, you know, she is on oxytocin, and, um, the baseline is about 150, and the variability looks a bit low, and, uh, there are late decelerations after the contractions, so maybe Level 4. So, um, could you please come and see her if you have time?"}
+ }
 }];
+
+const ci=(i,ja,en)=>({i,ja,en});
+const S0=SCENES[0];
+S0.cases=[
+{alert:S0.alert,line:S0.line,chart:S0.chart,good:S0.samples.good},
+{alert:{ja:"⚠ 吸引分娩後20分・鮮血が持続",en:"⚠ 20 min after vacuum birth · bright red bleeding"},
+ line:{ja:"「608号室、鮮血が止まりません」",en:"\"Room 608 — bright red blood won't stop.\""},
+ chart:[ci("🛏","608号室","Room 608"),ci("👩","28歳・経産婦","28 y/o, second birth"),ci("👶","吸引分娩・20分前","Vacuum birth, 20 min ago"),ci("🩸","鮮血 700ml（続いている）","Bright red blood, 700 ml (ongoing)"),ci("🫀","子宮は硬く収縮良好・裂傷の疑い","Uterus firm; laceration suspected"),ci("📉","血圧 100/60・脈拍 110","BP 100/60, pulse 110")],
+ good:{ja:"608号室、吸引分娩後20分の方です。鮮血の出血が700mlで続いています。子宮は硬く収縮していますが、裂傷が疑われます。血圧100/60、脈拍110です。すぐに来て診察をお願いします。",
+  en:"Room 608, a patient 20 minutes after vacuum delivery. Bright red bleeding is 700 ml and continuing. The uterus is firm and contracted, so I suspect a laceration. BP is 100 over 60, pulse 110. Please come now to examine her."}},
+{alert:{ja:"⚠ 産後40分・胎盤が出ない",en:"⚠ 40 min after birth · placenta not delivered"},
+ line:{ja:"「603号室、胎盤が出ないまま出血しています」",en:"\"Room 603 — bleeding and the placenta hasn't come out.\""},
+ chart:[ci("🛏","603号室","Room 603"),ci("👩","35歳・初産婦","35 y/o, first birth"),ci("👶","経腟分娩・40分前","Vaginal birth, 40 min ago"),ci("🩸","出血量 1000ml（続いている）","Blood loss 1000 ml (ongoing)"),ci("🫀","胎盤が出ない・子宮底が高く柔らかい","Placenta retained; uterus high and soft"),ci("📉","血圧 95/55・脈拍 112","BP 95/55, pulse 112")],
+ good:{ja:"603号室、35歳の初産婦、分娩後40分です。胎盤が出ず、出血が1000mlで続いています。子宮底が高く、柔らかいです。血圧95/55、脈拍112です。至急診察と指示をお願いします。",
+  en:"Room 603, a 35-year-old first-time mother, 40 minutes after delivery. The placenta has not come out and bleeding is 1000 ml and ongoing. The uterus is high and soft. BP is 95 over 55, pulse 112. Please come right away and give orders."}},
+{alert:{ja:"⚠ 帝王切開後2時間・パッド出血が多い",en:"⚠ 2 h after C-section · heavy pad bleeding"},
+ line:{ja:"「610号室、術後の出血が多く、顔色が悪いです」",en:"\"Room 610 — heavy bleeding after surgery, and she looks pale.\""},
+ chart:[ci("🛏","610号室","Room 610"),ci("👩","30歳・初産婦","30 y/o, first birth"),ci("🏥","帝王切開・2時間後","C-section, 2 hours ago"),ci("🩸","パッド出血 600ml（続いている）","Pad bleeding 600 ml (ongoing)"),ci("🫀","子宮が柔らかい","Uterus soft"),ci("📉","血圧 88/48・脈拍 124・冷汗","BP 88/48, pulse 124, cold sweat")],
+ good:{ja:"610号室、帝王切開後2時間の方です。パッド出血が600mlで続いています。子宮が柔らかく、血圧88/48、脈拍124、冷汗があります。すぐに来て診察をお願いします。",
+  en:"Room 610, a patient 2 hours after C-section. Bleeding on the pads is 600 ml and continuing. The uterus is soft, BP is 88 over 48, pulse 124, with cold sweat. Please come now to examine her."}},
+{alert:{ja:"⚠ 双胎分娩後15分・出血が止まらない",en:"⚠ 15 min after twin birth · bleeding won't stop"},
+ line:{ja:"「607号室、双子の分娩後で出血が止まりません」",en:"\"Room 607 — after twin delivery, she keeps bleeding.\""},
+ chart:[ci("🛏","607号室","Room 607"),ci("👩","33歳・初産婦（双胎）","33 y/o, first birth (twins)"),ci("👶","経腟分娩・15分前","Vaginal birth, 15 min ago"),ci("🩸","出血量 1500ml（止まらない）","Blood loss 1500 ml (not stopping)"),ci("🫀","子宮が弛緩している","Uterus atonic"),ci("📉","血圧 82/45・脈拍 130・意識もうろう","BP 82/45, pulse 130, drowsy")],
+ good:{ja:"607号室、双胎の経腟分娩後15分です。出血が1500mlで止まりません。子宮が弛緩しています。血圧82/45、脈拍130、意識がもうろうとしています。至急来てください、応援もお願いします。",
+  en:"Room 607, 15 minutes after a twin delivery. Bleeding is 1500 ml and won't stop. The uterus is atonic. BP is 82 over 45, pulse 130, and she is drowsy. Please come immediately and send more help."}},
+{alert:{ja:"⚠ 産後1時間・出血がゆっくり持続",en:"⚠ 1 h after birth · slow ongoing bleeding"},
+ line:{ja:"「611号室、少しずつ出血が続いています」",en:"\"Room 611 — she keeps bleeding slowly.\""},
+ chart:[ci("🛏","611号室","Room 611"),ci("👩","24歳・初産婦","24 y/o, first birth"),ci("👶","経腟分娩・1時間前","Vaginal birth, 1 hour ago"),ci("🩸","出血量 550ml（ゆっくり続く）","Blood loss 550 ml (slow, ongoing)"),ci("🫀","子宮はやや柔らかい","Uterus a little soft"),ci("📉","血圧 112/70・脈拍 96","BP 112/70, pulse 96")],
+ good:{ja:"611号室、24歳の初産婦、分娩後1時間です。出血が550mlでゆっくり続いています。子宮はやや柔らかいです。血圧112/70、脈拍96です。診察と子宮収縮薬の指示をお願いします。",
+  en:"Room 611, a 24-year-old first-time mother, 1 hour after delivery. Bleeding is 550 ml and slowly continuing. The uterus is a little soft. BP is 112 over 70, pulse 96. Please examine her and give orders for uterotonics."}}
+];
+SCENES[1].cases=[
+{k:"late",base:150,ans:4,why:SCENES[1].levelWhy,line:SCENES[1].line,chart:SCENES[1].chart,
+ good:{ja:"612号室、32歳の経産婦です。子宮収縮のたびに遅発一過性徐脈が反復しています。基線150、細変動が減少しています。レベル4と判断します。オキシトシンを止めて、至急診察をお願いします。",
+  en:"Room 612, a 32-year-old woman. Late decelerations repeat with every contraction. Baseline is 150 bpm with reduced variability. I assess Level 4. Please stop the oxytocin and come now to examine her."}},
+{k:"var",base:140,ans:3,
+ why:{ja:"基線と細変動は保たれていますが、変動一過性徐脈が反復しているため軽度異常（レベル3）です。",en:"Baseline and variability are preserved, but variable decelerations repeat, so this is mildly abnormal (Level 3)."},
+ line:{ja:"「615号室、急に心拍が落ちる波形が出ています」",en:"\"Room 615 — the heart rate keeps dropping sharply.\""},
+ chart:[ci("🛏","615号室","Room 615"),ci("👩","27歳・初産婦・38週","27 y/o, first birth, 38 weeks"),ci("📈","基線 140 bpm","Baseline 140 bpm"),ci("〰","細変動 あり（正常）","Variability present (normal)"),ci("⬇","収縮のたびに急なV字の変動一過性徐脈","Sharp V-shaped variable decelerations with contractions"),ci("🫄","約3分ごとの子宮収縮","Contractions about every 3 min")],
+ good:{ja:"615号室、27歳の初産婦です。子宮収縮のたびに変動一過性徐脈が出ています。基線140、細変動は保たれています。レベル3と判断します。体位変換をしています。診察をお願いします。",
+  en:"Room 615, a 27-year-old first-time mother. Variable decelerations appear with contractions. Baseline is 140 bpm and variability is present. I assess Level 3. We are repositioning her. Please come now to examine her."}},
+{k:"early",base:140,ans:2,
+ why:{ja:"基線・細変動は正常で、収縮と同時に浅い早発一過性徐脈があるだけなので亜正常（レベル2）です。",en:"Baseline and variability are normal and there are only shallow early decelerations with contractions, so this is slightly unusual (Level 2)."},
+ line:{ja:"「618号室、収縮に合わせて心拍が少し下がります」",en:"\"Room 618 — the heart rate dips slightly with contractions.\""},
+ chart:[ci("🛏","618号室","Room 618"),ci("👩","29歳・経産婦・40週","29 y/o, second birth, 40 weeks"),ci("📈","基線 140 bpm","Baseline 140 bpm"),ci("〰","細変動 あり（正常）","Variability present (normal)"),ci("⬇","収縮と同時に浅い早発一過性徐脈","Shallow early decelerations, in step with contractions"),ci("🚪","子宮口 8cm・進行中","Cervix 8 cm, progressing")],
+ good:{ja:"618号室、29歳の経産婦です。収縮と同時に浅い早発一過性徐脈が出ています。基線140、細変動は保たれています。レベル2と判断します。念のため診察と指示をお願いします。",
+  en:"Room 618, a 29-year-old woman. Shallow early decelerations appear together with contractions. Baseline is 140 bpm and variability is present. I assess Level 2. Please come to check her and give orders."}},
+{k:"prol",base:140,ans:5,
+ why:{ja:"心拍が70台まで下がる遅延一過性徐脈が3分以上続いており、高度異常（レベル5）です。",en:"A prolonged deceleration to the 70s lasting over 3 minutes means severely abnormal (Level 5)."},
+ line:{ja:"「620号室、心拍が70台まで落ちて戻りません」",en:"\"Room 620 — the heart rate fell to the 70s and isn't recovering.\""},
+ chart:[ci("🛏","620号室","Room 620"),ci("👩","31歳・初産婦・39週","31 y/o, first birth, 39 weeks"),ci("🩺","内診の直後","Right after a vaginal exam"),ci("📈","基線 140 bpm","Baseline 140 bpm"),ci("⬇","70台まで低下・3分以上持続","Dropped to the 70s, over 3 min"),ci("〰","細変動 減少","Variability reduced")],
+ good:{ja:"620号室、31歳の初産婦です。心拍が70台まで低下する遅延一過性徐脈が3分以上続いています。基線140、細変動は減少しています。レベル5と判断します。体位変換と酸素投与をしています。至急来てください。",
+  en:"Room 620, a 31-year-old first-time mother. A prolonged deceleration to 70 bpm has lasted over 3 minutes. Baseline is 140 bpm and variability is reduced. I assess Level 5. We are turning her and giving oxygen. Please come immediately."}},
+{k:"tachy",base:175,ans:4,
+ why:{ja:"基線175の頻脈に細変動の減少があり、中等度異常（レベル4）です。母体の発熱が背景にあります。",en:"A baseline of 175 (tachycardia) with reduced variability is moderately abnormal (Level 4). Maternal fever is the likely background."},
+ line:{ja:"「622号室、胎児心拍が速く、お母さんが発熱しています」",en:"\"Room 622 — the baby's heart rate is fast and the mother has a fever.\""},
+ chart:[ci("🛏","622号室","Room 622"),ci("👩","26歳・初産婦・40週","26 y/o, first birth, 40 weeks"),ci("🌡","体温 38.6℃・破水後18時間","Temp 38.6°C, 18 h since waters broke"),ci("📈","基線 175 bpm（頻脈）","Baseline 175 bpm (tachycardia)"),ci("〰","細変動 減少","Variability reduced"),ci("✅","一過性徐脈なし","No decelerations")],
+ good:{ja:"622号室、26歳の初産婦、体温38.6度です。胎児頻脈で基線175、細変動が減少しています。一過性徐脈はありません。レベル4と判断します。至急診察と指示をお願いします。",
+  en:"Room 622, a 26-year-old first-time mother with a temperature of 38.6. Fetal tachycardia: baseline is 175 bpm with reduced variability. No decelerations. I assess Level 4. Please come now and give orders."}},
+{k:"sin",base:130,ans:5,
+ why:{ja:"規則的な正弦波様（サイナソイダル）で細変動が消失しており、高度異常（レベル5）です。",en:"A regular wave-like (sinusoidal) pattern with absent variability is severely abnormal (Level 5)."},
+ line:{ja:"「625号室、波形がなめらかな波になっています」",en:"\"Room 625 — the trace is a smooth, regular wave.\""},
+ chart:[ci("🛏","625号室","Room 625"),ci("👩","34歳・経産婦・36週","34 y/o, second birth, 36 weeks"),ci("👶","胎動が減ったと来院","Came in with less fetal movement"),ci("📈","基線 130 bpm","Baseline 130 bpm"),ci("〰","正弦波様・細変動なし","Sinusoidal wave, no variability"),ci("🫄","子宮収縮なし","No contractions")],
+ good:{ja:"625号室、34歳の経産婦、36週です。サイナソイダルパターンで細変動が消失しています。基線130、胎動が減少しています。レベル5と判断します。至急診察をお願いします。",
+  en:"Room 625, a 34-year-old woman at 36 weeks. A sinusoidal pattern with absent variability. Baseline is 130 bpm and fetal movement is reduced. I assess Level 5. Please come right away to examine her."}}
+];
+S0.cases.push(
+{alert:{ja:"⚠ 産後30分・出血は少量だが続く（軽症）",en:"⚠ 30 min after birth · light ongoing bleeding (mild)"},
+ line:{ja:"「604号室、出血が少し多い気がします」",en:"\"Room 604 — the bleeding seems a little heavy.\""},
+ chart:[ci("🛏","604号室","Room 604"),ci("👩","27歳・経産婦","27 y/o, second birth"),ci("👶","経腟分娩・30分前","Vaginal birth, 30 min ago"),ci("🩸","出血量 450ml（少しずつ続く）","Blood loss 450 ml (slowly ongoing)"),ci("🫀","子宮はやや柔らかい","Uterus slightly soft"),ci("📉","血圧 118/72・脈拍 84","BP 118/72, pulse 84")],
+ good:{ja:"604号室、27歳の経産婦、分娩後30分です。出血が450mlで少しずつ続いています。子宮はやや柔らかいです。血圧118/72、脈拍84で安定しています。診察と指示をお願いします。",
+  en:"Room 604, a 27-year-old woman, 30 minutes after delivery. Bleeding is 450 ml and slowly continuing. The uterus is slightly soft. BP is 118 over 72, pulse 84, stable. Please examine her and give orders."}},
+{alert:{ja:"⚠ 前置胎盤の帝王切開後・出血2000ml（最重症）",en:"⚠ After C-section for placenta previa · 2000 ml loss (critical)"},
+ line:{ja:"「601号室、出血が2000mlを超え、意識が落ちています」",en:"\"Room 601 — blood loss is over 2000 ml and she is losing consciousness.\""},
+ chart:[ci("🛏","601号室","Room 601"),ci("👩","37歳・経産婦（前置胎盤）","37 y/o, third birth (placenta previa)"),ci("🏥","帝王切開・30分後","C-section, 30 min ago"),ci("🩸","出血量 2000ml（止まらない）","Blood loss 2000 ml (not stopping)"),ci("🫀","子宮が弛緩している","Uterus atonic"),ci("📉","血圧 70/40・脈拍 140・意識低下","BP 70/40, pulse 140, drowsy")],
+ good:{ja:"601号室、前置胎盤で帝王切開後30分の方です。出血が2000mlで止まらず、子宮が弛緩しています。血圧70/40、脈拍140、意識が低下しています。至急来てください、応援と輸血の指示をお願いします。",
+  en:"Room 601, 30 minutes after a C-section for placenta previa. Bleeding is 2000 ml and not stopping, and the uterus is atonic. BP is 70 over 40, pulse 140, and her consciousness is dropping. Please come immediately and give orders for transfusion and more help."}},
+{alert:{ja:"⚠ 産後1時間・会陰の痛みと腫れ（血腫の疑い）",en:"⚠ 1 h after birth · perineal pain and swelling (hematoma?)"},
+ line:{ja:"「606号室、会陰が腫れて強く痛がっています」",en:"\"Room 606 — her perineum is swollen and very painful.\""},
+ chart:[ci("🛏","606号室","Room 606"),ci("👩","29歳・初産婦","29 y/o, first birth"),ci("👶","経腟分娩・1時間前","Vaginal birth, 1 hour ago"),ci("🩸","出血量 400ml・会陰に腫れ","Blood loss 400 ml, perineal swelling"),ci("🫀","子宮は硬く収縮良好","Uterus firm and contracted"),ci("📉","血圧 98/58・脈拍 108","BP 98/58, pulse 108")],
+ good:{ja:"606号室、29歳の初産婦、分娩後1時間です。出血が400mlで、会陰が腫れて強い痛みがあり血腫が疑われます。子宮は硬く収縮しています。血圧98/58、脈拍108です。すぐに診察をお願いします。",
+  en:"Room 606, a 29-year-old first-time mother, 1 hour after delivery. Blood loss is 400 ml, and the perineum is swollen and very painful, so I suspect a hematoma. The uterus is firm. BP is 98 over 58, pulse 108. Please come now to examine her."}},
+{alert:{ja:"⚠ 産後3時間・突然の大量出血（凝血塊あり）",en:"⚠ 3 h after birth · sudden heavy bleeding with clots"},
+ line:{ja:"「609号室、急に大きな血のかたまりが出ました」",en:"\"Room 609 — she suddenly passed large clots.\""},
+ chart:[ci("🛏","609号室","Room 609"),ci("👩","31歳・経産婦","31 y/o, second birth"),ci("👶","経腟分娩・3時間前","Vaginal birth, 3 hours ago"),ci("🩸","出血量 900ml（凝血塊あり）","Blood loss 900 ml (with clots)"),ci("🫀","子宮が柔らかく膨らむ","Uterus soft and enlarging"),ci("📉","血圧 92/54・脈拍 116","BP 92/54, pulse 116")],
+ good:{ja:"609号室、31歳の経産婦、分娩後3時間です。急に凝血塊が出て、出血が900mlになりました。子宮が柔らかく、大きくなっています。血圧92/54、脈拍116です。至急診察をお願いします。",
+  en:"Room 609, a 31-year-old woman, 3 hours after delivery. She suddenly passed clots and blood loss is now 900 ml. The uterus is soft and enlarging. BP is 92 over 54, pulse 116. Please come right away to examine her."}}
+);
+SCENES[1].cases.push(
+{k:"norm",base:140,ans:1,
+ why:{ja:"基線140、細変動あり、一過性徐脈なしで正常（レベル1）です。",en:"Baseline 140, variability present and no decelerations: normal (Level 1)."},
+ line:{ja:"「614号室、念のためCTGの確認をお願いします」",en:"\"Room 614 — please check the CTG, just to be sure.\""},
+ chart:[ci("🛏","614号室","Room 614"),ci("👩","25歳・初産婦・39週","25 y/o, first birth, 39 weeks"),ci("📈","基線 140 bpm","Baseline 140 bpm"),ci("〰","細変動 あり（正常）","Variability present (normal)"),ci("✅","一過性徐脈なし","No decelerations"),ci("🫄","約5分ごとの子宮収縮","Contractions about every 5 min")],
+ good:{ja:"614号室、25歳の初産婦です。基線140、細変動は保たれ、一過性徐脈はありません。子宮収縮は5分ごとです。レベル1と判断します。念のため診察をお願いします。",
+  en:"Room 614, a 25-year-old first-time mother. Baseline is 140 bpm, variability is present and there are no decelerations. Contractions every 5 minutes. I assess Level 1. Please come to check her."}},
+{k:"lmild",base:145,ans:3,
+ why:{ja:"細変動は保たれていますが、浅い遅発一過性徐脈が出ているため軽度異常（レベル3）です。",en:"Variability is preserved, but shallow late decelerations appear, so this is mildly abnormal (Level 3)."},
+ line:{ja:"「616号室、収縮のあとに心拍が浅く下がります」",en:"\"Room 616 — the heart rate dips slightly after contractions.\""},
+ chart:[ci("🛏","616号室","Room 616"),ci("👩","30歳・初産婦・40週","30 y/o, first birth, 40 weeks"),ci("📈","基線 145 bpm","Baseline 145 bpm"),ci("〰","細変動 あり","Variability present"),ci("⬇","浅い遅発一過性徐脈が時々","Occasional shallow late decelerations"),ci("🫄","約3分ごとの子宮収縮","Contractions about every 3 min")],
+ good:{ja:"616号室、30歳の初産婦です。浅い遅発一過性徐脈が時々出ています。基線145、細変動は保たれています。レベル3と判断します。体位変換をしています。診察をお願いします。",
+  en:"Room 616, a 30-year-old first-time mother. Occasional shallow late decelerations. Baseline is 145 bpm and variability is present. I assess Level 3. We are repositioning her. Please come to examine her."}},
+{k:"brady",base:105,ans:3,
+ why:{ja:"基線105の徐脈ですが細変動は保たれ、一過性徐脈もないため軽度異常（レベル3）です。",en:"Baseline 105 is bradycardia, but variability is preserved and there are no decelerations: mildly abnormal (Level 3)."},
+ line:{ja:"「617号室、基線が100台前半で低いです」",en:"\"Room 617 — the baseline is low, around 100.\""},
+ chart:[ci("🛏","617号室","Room 617"),ci("👩","33歳・経産婦・41週","33 y/o, second birth, 41 weeks"),ci("📈","基線 105 bpm（徐脈）","Baseline 105 bpm (bradycardia)"),ci("〰","細変動 あり","Variability present"),ci("✅","一過性徐脈なし","No decelerations"),ci("🫄","子宮収縮は不規則","Irregular contractions")],
+ good:{ja:"617号室、33歳の経産婦、41週です。基線105の徐脈で、細変動は保たれています。一過性徐脈はありません。レベル3と判断します。診察と指示をお願いします。",
+  en:"Room 617, a 33-year-old woman at 41 weeks. Bradycardia with a baseline of 105 bpm; variability is present and there are no decelerations. I assess Level 3. Please come and give orders."}},
+{k:"tachyM",base:165,ans:3,
+ why:{ja:"基線165の軽い頻脈ですが細変動は保たれ、徐脈もないため軽度異常（レベル3）です。母体は微熱で、CAMに注意が必要です。",en:"A mild tachycardia at 165 with preserved variability and no decelerations is mildly abnormal (Level 3). Mother has a low fever, so watch for chorioamnionitis."},
+ line:{ja:"「619号室、微熱があり、胎児心拍が少し速いです」",en:"\"Room 619 — mild fever and the baby's heart rate is a little fast.\""},
+ chart:[ci("🛏","619号室","Room 619"),ci("👩","28歳・初産婦・39週","28 y/o, first birth, 39 weeks"),ci("🌡","体温 37.9℃・破水後10時間","Temp 37.9°C, 10 h since waters broke"),ci("📈","基線 165 bpm","Baseline 165 bpm"),ci("〰","細変動 あり","Variability present"),ci("✅","一過性徐脈なし","No decelerations")],
+ good:{ja:"619号室、28歳の初産婦、体温37.9度で破水後10時間です。基線165の頻脈で、細変動は保たれています。一過性徐脈はありません。レベル3と判断します。診察と指示をお願いします。",
+  en:"Room 619, a 28-year-old first-time mother, temperature 37.9, 10 hours since her waters broke. Tachycardia with baseline 165 bpm; variability is present and no decelerations. I assess Level 3. Please come and give orders."}},
+{k:"varS",base:150,ans:4,
+ why:{ja:"変動一過性徐脈が反復し、細変動も減少しているため中等度異常（レベル4）です。",en:"Variable decelerations repeat and variability is reduced, so this is moderately abnormal (Level 4)."},
+ line:{ja:"「621号室、心拍が落ちる回数が増えて、揺れも少ないです」",en:"\"Room 621 — more heart rate drops, and less wiggle in the trace.\""},
+ chart:[ci("🛏","621号室","Room 621"),ci("👩","35歳・初産婦・40週","35 y/o, first birth, 40 weeks"),ci("📈","基線 150 bpm","Baseline 150 bpm"),ci("〰","細変動 減少","Variability reduced"),ci("⬇","収縮のたびに変動一過性徐脈","Variable decelerations with every contraction"),ci("🚪","子宮口 9cm","Cervix 9 cm")],
+ good:{ja:"621号室、35歳の初産婦です。収縮のたびに変動一過性徐脈が出ています。基線150、細変動が減少しています。レベル4と判断します。至急診察をお願いします。",
+  en:"Room 621, a 35-year-old first-time mother. Variable decelerations with every contraction. Baseline is 150 bpm with reduced variability. I assess Level 4. Please come now to examine her."}}
+);
+S0.cases.push(
+{alert:{ja:"⚠ 妊娠34週・前置胎盤・痛みのない出血",en:"⚠ 34 weeks · placenta previa · painless bleeding"},
+ line:{ja:"「602号室、前置胎盤の方が急に出血しています」",en:"\"Room 602 — a woman with placenta previa is suddenly bleeding.\""},
+ chart:[ci("🛏","602号室","Room 602"),ci("👩","36歳・経産婦・妊娠34週","36 y/o, second birth, 34 weeks"),ci("🩸","鮮血 500ml・腹痛なし","Bright red blood 500 ml, no pain"),ci("🫀","子宮は柔らかく、張りなし","Uterus soft, no tightening"),ci("📉","血圧 104/62・脈拍 106","BP 104/62, pulse 106"),ci("⏱","出血は30分前から","Bleeding started 30 min ago")],
+ good:{ja:"602号室、36歳の経産婦、妊娠34週で前置胎盤です。30分前から鮮血の出血が500mlあり、腹痛はありません。子宮は柔らかいです。血圧104/62、脈拍106です。至急診察と指示をお願いします。",
+  en:"Room 602, a 36-year-old woman at 34 weeks with placenta previa. Bright red bleeding of 500 ml since 30 minutes ago, with no pain. The uterus is soft. BP is 104 over 62, pulse 106. Please come right away and give orders."}},
+{alert:{ja:"⚠ 腹痛と暗赤色の出血・胎盤早期剥離の疑い",en:"⚠ Abdominal pain and dark blood · suspected placental abruption"},
+ line:{ja:"「613号室、強い腹痛と出血があり、お腹が板のように硬いです」",en:"\"Room 613 — severe abdominal pain and bleeding, and her belly is rock hard.\""},
+ chart:[ci("🛏","613号室","Room 613"),ci("👩","33歳・初産婦・妊娠37週","33 y/o, first birth, 37 weeks"),ci("🩸","暗赤色の出血 400ml","Dark red blood 400 ml"),ci("🫀","子宮が板のように硬い・持続する痛み","Uterus board-hard, constant pain"),ci("📉","血圧 96/58・脈拍 120","BP 96/58, pulse 120"),ci("⏱","30分前から腹痛","Pain began 30 min ago")],
+ good:{ja:"613号室、33歳の初産婦、妊娠37週です。30分前から強い腹痛と暗赤色の出血が400mlあります。子宮が板のように硬く、胎盤早期剥離を疑います。血圧96/58、脈拍120です。至急来てください、応援もお願いします。",
+  en:"Room 613, a 33-year-old first-time mother at 37 weeks. Severe pain since 30 minutes ago and dark red bleeding of 400 ml. The uterus is board-hard and I suspect placental abruption. BP is 96 over 58, pulse 120. Please come immediately and send more help."}},
+{alert:{ja:"⚠ 母体搬送で到着・他院で分娩後1時間の出血",en:"⚠ Maternal transport arrived · bleeding 1 h after birth at another clinic"},
+ line:{ja:"「救急搬送の方が着きました。他院で産後に出血が止まらないそうです」",en:"\"A transfer patient just arrived. She kept bleeding after giving birth at another clinic.\""},
+ chart:[ci("🛏","分娩室2・搬送","Delivery room 2, transfer"),ci("👩","30歳・経産婦","30 y/o, second birth"),ci("🏥","他院で経腟分娩・1時間前","Birth at another clinic, 1 hour ago"),ci("🩸","出血量 1200ml（続いている）","Blood loss 1200 ml (ongoing)"),ci("🫀","子宮が柔らかい","Uterus soft"),ci("📉","血圧 86/50・脈拍 126・冷汗","BP 86/50, pulse 126, cold sweat")],
+ good:{ja:"分娩室2に搬送の30歳の経産婦です。他院で分娩後1時間で、出血が1200mlで続いています。子宮が柔らかく、血圧86/50、脈拍126、冷汗があります。至急診察と輸液の指示をお願いします。",
+  en:"Transfer patient in delivery room 2, a 30-year-old woman, 1 hour after birth at another clinic. Bleeding is 1200 ml and ongoing. The uterus is soft, BP is 86 over 50, pulse 126, with cold sweat. Please come immediately and give orders for fluids."}},
+{alert:{ja:"⚠ 前期破水・少量の出血（軽症）",en:"⚠ Preterm rupture of membranes · light bleeding (mild)"},
+ line:{ja:"「608号室、破水のあと少し出血があります」",en:"\"Room 608 — a little bleeding after her waters broke.\""},
+ chart:[ci("🛏","608号室","Room 608"),ci("👩","29歳・初産婦・妊娠36週","29 y/o, first birth, 36 weeks"),ci("💧","前期破水・2時間前","Waters broke before labor, 2 hours ago"),ci("🩸","出血量 80ml（少量）","Blood loss 80 ml (light)"),ci("🫀","子宮は柔らかく、張りなし","Uterus soft, no tightening"),ci("📉","血圧 114/70・脈拍 88","BP 114/70, pulse 88")],
+ good:{ja:"608号室、29歳の初産婦、妊娠36週で前期破水です。2時間前に破水し、出血が80mlあります。子宮は柔らかく、血圧114/70、脈拍88で安定しています。診察と指示をお願いします。",
+  en:"Room 608, a 29-year-old first-time mother at 36 weeks with ruptured membranes. Her waters broke 2 hours ago and bleeding is 80 ml. The uterus is soft, BP is 114 over 70, pulse 88, stable. Please come and give orders."}}
+);
+SCENES[1].cases.push(
+{k:"var",base:140,ans:3,
+ why:{ja:"前期破水で変動一過性徐脈が出ていますが、基線と細変動は保たれており軽度異常（レベル3）です。",en:"Variable decelerations after ruptured membranes, but baseline and variability are preserved: mildly abnormal (Level 3)."},
+ line:{ja:"「608号室、前期破水で、心拍が急に落ちます」",en:"\"Room 608 — her waters broke early, and the heart rate drops suddenly.\""},
+ chart:[ci("🛏","608号室","Room 608"),ci("👩","29歳・初産婦・妊娠36週","29 y/o, first birth, 36 weeks"),ci("💧","前期破水・3時間前","Waters broke before labor, 3 hours ago"),ci("📈","基線 140 bpm","Baseline 140 bpm"),ci("〰","細変動 あり","Variability present"),ci("⬇","変動一過性徐脈が反復","Repeated variable decelerations")],
+ good:{ja:"608号室、29歳の初産婦、妊娠36週で前期破水です。変動一過性徐脈が反復しています。基線140、細変動は保たれています。レベル3と判断します。体位変換をしています。診察をお願いします。",
+  en:"Room 608, a 29-year-old first-time mother at 36 weeks with ruptured membranes. Variable decelerations repeat. Baseline is 140 bpm and variability is present. I assess Level 3. We are repositioning her. Please come to examine her."}},
+{k:"lmild",base:150,ans:3,alert:{ja:"⚠ 母体搬送で到着・妊娠32週の切迫早産",en:"⚠ Maternal transport arrived · threatened preterm labor, 32 weeks"},
+ why:{ja:"細変動は保たれていますが、浅い遅発一過性徐脈があるため軽度異常（レベル3）です。",en:"Variability is preserved, but shallow late decelerations appear, so this is mildly abnormal (Level 3)."},
+ line:{ja:"「母体搬送の方が着きました。CTGを確認してください」",en:"\"A maternal transfer just arrived. Please check the CTG.\""},
+ chart:[ci("🛏","分娩室1・搬送","Delivery room 1, transfer"),ci("👩","31歳・初産婦・妊娠32週","31 y/o, first birth, 32 weeks"),ci("🏥","切迫早産で搬送・30分前に到着","Transferred for preterm labor, arrived 30 min ago"),ci("📈","基線 150 bpm","Baseline 150 bpm"),ci("⬇","浅い遅発一過性徐脈が時々","Occasional shallow late decelerations"),ci("🫄","約4分ごとの子宮収縮","Contractions about every 4 min")],
+ good:{ja:"分娩室1に搬送の31歳の初産婦、妊娠32週です。浅い遅発一過性徐脈が時々出ています。基線150、細変動は保たれています。子宮収縮は4分ごとです。レベル3と判断します。診察をお願いします。",
+  en:"Transfer patient in delivery room 1, a 31-year-old first-time mother at 32 weeks. Occasional shallow late decelerations. Baseline is 150 bpm and variability is present. Contractions every 4 minutes. I assess Level 3. Please come to examine her."}},
+{k:"prol",base:150,ans:5,alert:{ja:"⚠ 腹痛と出血・胎盤早期剥離の疑い・心拍低下",en:"⚠ Pain and bleeding · suspected abruption · heart rate falling"},
+ why:{ja:"持続する腹痛と出血に、心拍が70台まで下がる遅延一過性徐脈が続いており、胎盤早期剥離を疑う高度異常（レベル5）です。",en:"Constant pain and bleeding with a prolonged deceleration to the 70s suggests placental abruption: severely abnormal (Level 5)."},
+ line:{ja:"「613号室、腹痛と出血があり、心拍が70台に落ちています」",en:"\"Room 613 — pain and bleeding, and the heart rate has fallen to the 70s.\""},
+ chart:[ci("🛏","613号室","Room 613"),ci("👩","33歳・初産婦・妊娠37週","33 y/o, first birth, 37 weeks"),ci("🩸","暗赤色の出血・子宮が板状に硬い","Dark red bleeding, board-hard uterus"),ci("📈","基線 150 bpm","Baseline 150 bpm"),ci("⬇","70台まで低下・3分以上持続","Dropped to the 70s, over 3 min"),ci("〰","細変動 減少","Variability reduced")],
+ good:{ja:"613号室、33歳の初産婦、妊娠37週です。腹痛と暗赤色の出血があり、子宮が板のように硬く、胎盤早期剥離を疑います。心拍が70台まで低下する遅延一過性徐脈が続いています。基線150、細変動は減少しています。レベル5と判断します。至急来てください。",
+  en:"Room 613, a 33-year-old first-time mother at 37 weeks. Pain and dark red bleeding, board-hard uterus, and I suspect placental abruption. A prolonged deceleration to 70 bpm continues. Baseline is 150 bpm and variability is reduced. I assess Level 5. Please come immediately."}},
+{k:"norm",base:145,ans:1,alert:{ja:"⚠ 前置胎盤・少量出血・胎児心拍の確認",en:"⚠ Placenta previa · light bleeding · checking the fetal heart rate"},
+ why:{ja:"出血はありますが、基線145、細変動あり、一過性徐脈なしで胎児心拍は正常（レベル1）です。",en:"There is bleeding, but baseline 145, variability present and no decelerations mean a normal trace (Level 1)."},
+ line:{ja:"「602号室、前置胎盤で出血があります。CTGを見てください」",en:"\"Room 602 — placenta previa with bleeding. Please check the CTG.\""},
+ chart:[ci("🛏","602号室","Room 602"),ci("👩","36歳・経産婦・妊娠34週","36 y/o, second birth, 34 weeks"),ci("🩸","出血 150ml・腹痛なし","Bleeding 150 ml, no pain"),ci("📈","基線 145 bpm","Baseline 145 bpm"),ci("〰","細変動 あり（正常）","Variability present (normal)"),ci("✅","一過性徐脈なし","No decelerations")],
+ good:{ja:"602号室、36歳の経産婦、妊娠34週で前置胎盤です。出血が150mlあります。基線145、細変動は保たれ、一過性徐脈はありません。レベル1と判断します。診察をお願いします。",
+  en:"Room 602, a 36-year-old woman at 34 weeks with placenta previa and 150 ml of bleeding. Baseline is 145 bpm, variability is present and there are no decelerations. I assess Level 1. Please come to examine her."}},
+{k:"varS",base:150,ans:4,
+ why:{ja:"前期破水後で羊水が少なく、変動一過性徐脈が反復し細変動も減少しているため中等度異常（レベル4）です。",en:"After ruptured membranes with low fluid, repeated variable decelerations and reduced variability are moderately abnormal (Level 4)."},
+ line:{ja:"「624号室、破水後で、心拍が何度も落ちて揺れも少ないです」",en:"\"Room 624 — since her waters broke, the heart rate keeps dropping and shows less wiggle.\""},
+ chart:[ci("🛏","624号室","Room 624"),ci("👩","32歳・初産婦・妊娠38週","32 y/o, first birth, 38 weeks"),ci("💧","破水後12時間・羊水少なめ","12 h since waters broke, low fluid"),ci("📈","基線 150 bpm","Baseline 150 bpm"),ci("〰","細変動 減少","Variability reduced"),ci("⬇","収縮のたびに変動一過性徐脈","Variable decelerations with every contraction")],
+ good:{ja:"624号室、32歳の初産婦、破水後12時間で羊水が少ないです。収縮のたびに変動一過性徐脈が出ています。基線150、細変動が減少しています。レベル4と判断します。至急診察をお願いします。",
+  en:"Room 624, a 32-year-old first-time mother, 12 hours since her waters broke, low fluid. Variable decelerations with every contraction. Baseline is 150 bpm with reduced variability. I assess Level 4. Please come now to examine her."}}
+);
+/* night-time, non-urgent cases: the on-call doctor is asleep */
+S0.cases.push(
+{alert:{ja:"🌙 午前3時・当直医は仮眠中・出血は正常範囲",en:"🌙 3 a.m. · on-call doctor asleep · bleeding within normal range"},
+ line:{ja:"「627号室、産後の出血がちょっと気になって…」",en:"\"Room 627 — I'm a little unsure about her postpartum bleeding...\""},
+ chart:[ci("🛏","627号室","Room 627"),ci("👩","29歳・経産婦","29 y/o, second birth"),ci("👶","経腟分娩・2時間前","Vaginal birth, 2 hours ago"),ci("🩸","出血量 150ml（正常範囲・減少傾向）","Blood loss 150 ml (normal, decreasing)"),ci("🫀","子宮は硬く収縮良好","Uterus firm and contracted"),ci("📉","血圧 118/72・脈拍 80（安定）","BP 118/72, pulse 80 (stable)")],
+ night:{angry:{ja:"「はあ？ こんな真夜中に、そんな報告で起こすな！ 朝になってからでいいだろ！」",en:"\"What?! You woke me in the middle of the night for that? That can wait until morning!\""},
+  soft:{ja:"「了解。安定してるなら朝の回診で診るよ。変化があったらまた連絡して」",en:"\"Okay. If she's stable, I'll see her on morning rounds. Call me again if anything changes.\""}},
+ good:{ja:"夜分に申し訳ありません。627号室、29歳の経産婦、分娩後2時間です。出血は150mlで減少傾向、子宮は硬く収縮良好です。血圧118/72、脈拍80で安定しています。緊急ではないので、朝の回診で診察をお願いします。",
+  en:"Sorry to call at night. Room 627, a 29-year-old woman, 2 hours after delivery. Bleeding is 150 ml and decreasing, and the uterus is firm and contracted. BP is 118 over 72, pulse 80, stable. It is not urgent, so please examine her on morning rounds."}}
+);
+SCENES[1].cases.push(
+{k:"norm",base:140,ans:1,alert:{ja:"🌙 午前3時・当直医は仮眠中・CTGは正常",en:"🌙 3 a.m. · on-call doctor asleep · CTG is normal"},
+ why:{ja:"基線140、細変動あり、一過性徐脈なしで正常（レベル1）です。夜間に急いで呼ぶ必要はありません。",en:"Baseline 140, variability present and no decelerations: normal (Level 1). There is no need to wake the doctor urgently."},
+ line:{ja:"「628号室、念のためCTGを見てほしいです」",en:"\"Room 628 — I'd like you to look at the CTG, just in case.\""},
+ chart:[ci("🛏","628号室","Room 628"),ci("👩","26歳・初産婦・妊娠38週","26 y/o, first birth, 38 weeks"),ci("📈","基線 140 bpm","Baseline 140 bpm"),ci("〰","細変動 あり（正常）","Variability present (normal)"),ci("✅","一過性徐脈なし","No decelerations"),ci("🫄","陣痛はまだ不規則","Contractions still irregular")],
+ night:{angry:{ja:"「正常な波形で夜中に電話してくるな！ 朝になってからでいいだろ！」",en:"\"Don't call me at midnight over a normal trace! That can wait until morning!\""},
+  soft:{ja:"「正常ならそのまま観察で。朝の回診で確認する。変化したら連絡して」",en:"\"If it's normal, just keep observing. I'll check on morning rounds. Call me if it changes.\""}},
+ good:{ja:"夜分に申し訳ありません。628号室、26歳の初産婦です。基線140、細変動は保たれ、一過性徐脈はありません。子宮収縮は不規則です。レベル1と判断します。緊急ではないので、朝の回診で診察をお願いします。",
+  en:"Sorry to call at night. Room 628, a 26-year-old first-time mother. Baseline is 140 bpm, variability is present and there are no decelerations. Contractions are irregular. I assess Level 1. It is not urgent, so please examine her on morning rounds."}}
+);
+/* Grade A (emergency) cesarean cases */
+SCENES[1].cases.push(
+{k:"prol",base:140,ans:5,alert:{ja:"🚨 臍帯脱出・グレードA帝王切開の適応",en:"🚨 Cord prolapse · Grade A cesarean indicated"},
+ why:{ja:"臍帯脱出に伴い心拍が60台まで低下する遅延一過性徐脈が持続しており、高度異常（レベル5）です。母児の命に直ちに危険が及ぶためグレードA帝王切開（30分以内の娩出）が必要です。",en:"Cord prolapse with a prolonged deceleration to the 60s is severely abnormal (Level 5). It is an immediate threat to the baby, so a Grade A cesarean (delivery within 30 minutes) is needed."},
+ line:{ja:"「622号室、破水直後に臍帯が触れて、心拍が60台に落ちています」",en:"\"Room 622 — I can feel the cord after her waters broke, and the heart rate is in the 60s.\""},
+ chart:[ci("🛏","622号室","Room 622"),ci("👩","29歳・経産婦・妊娠38週","29 y/o, second birth, 38 weeks"),ci("💧","自然破水の直後・内診で臍帯を触知","Waters just broke; cord felt on vaginal exam"),ci("📈","基線 140 bpm","Baseline 140 bpm"),ci("⬇","60台まで低下・3分以上持続","Dropped to the 60s, over 3 min"),ci("〰","細変動 減少","Variability reduced")],
+ good:{ja:"622号室、29歳の経産婦、妊娠38週です。破水直後に臍帯脱出があり、心拍が60台まで低下する遅延一過性徐脈が続いています。基線140、細変動は減少しています。レベル5と判断します。膝胸位にして用手で児頭を挙上しています。至急来てください、グレードA帝王切開をお願いします。",
+  en:"Room 622, a 29-year-old woman at 38 weeks. Cord prolapse right after her waters broke, and a prolonged deceleration to the 60s continues. Baseline is 140 bpm and variability is reduced. I assess Level 5. She is in knee-chest position and I am lifting the head by hand. Please come immediately, we need a Grade A cesarean."}},
+{k:"prol",base:150,ans:5,alert:{ja:"🚨 帝王切開後の試験分娩中・子宮破裂の疑い・グレードA",en:"🚨 Trial of labor after cesarean · suspected uterine rupture · Grade A"},
+ why:{ja:"帝王切開後の試験分娩中に突然の激痛と心拍低下があり、子宮破裂を疑う高度異常（レベル5）です。グレードA帝王切開が必要です。",en:"Sudden severe pain and a falling heart rate during a trial of labor after cesarean suggest uterine rupture: severely abnormal (Level 5). A Grade A cesarean is needed."},
+ line:{ja:"「626号室、突然の激痛のあと、心拍が70台に落ちて戻りません」",en:"\"Room 626 — after sudden severe pain, the heart rate fell to the 70s and isn't recovering.\""},
+ chart:[ci("🛏","626号室","Room 626"),ci("👩","34歳・経産婦・妊娠39週（前回帝王切開）","34 y/o, second birth, 39 weeks (previous cesarean)"),ci("⚡","突然の激痛・陣痛が止まった","Sudden severe pain; contractions stopped"),ci("📈","基線 150 bpm","Baseline 150 bpm"),ci("⬇","70台まで低下・3分以上持続","Dropped to the 70s, over 3 min"),ci("🩸","出血あり・血圧 92/54・脈拍 122","Bleeding; BP 92/54, pulse 122")],
+ good:{ja:"626号室、34歳の経産婦、前回帝王切開で試験分娩中です。突然の激痛のあと、心拍が70台まで低下する遅延一過性徐脈が続いています。基線150、出血があり、血圧92/54、脈拍122です。子宮破裂を疑い、レベル5と判断します。至急来てください、グレードA帝王切開をお願いします。",
+  en:"Room 626, a 34-year-old woman in a trial of labor after a previous cesarean. After sudden severe pain, a prolonged deceleration to the 70s continues. Baseline is 150 bpm, she is bleeding, BP is 92 over 54, pulse 122. I suspect uterine rupture and assess Level 5. Please come immediately, we need a Grade A cesarean."}}
+);
+S0.cases.push(
+{alert:{ja:"🚨 試験分娩中・子宮破裂の疑い・ショック（グレードA）",en:"🚨 Trial of labor · suspected uterine rupture · shock (Grade A)"},
+ line:{ja:"「626号室、激痛のあと出血が増え、血圧が下がっています」",en:"\"Room 626 — after severe pain the bleeding increased and her blood pressure is falling.\""},
+ chart:[ci("🛏","626号室","Room 626"),ci("👩","34歳・経産婦（前回帝王切開）","34 y/o, second birth (previous cesarean)"),ci("⚡","突然の激痛・陣痛が止まった","Sudden severe pain; contractions stopped"),ci("🩸","出血量 900ml（増えている）","Blood loss 900 ml (increasing)"),ci("🫀","腹部が張り、胎児心拍が低下","Abdomen distended, fetal heart rate falling"),ci("📉","血圧 84/48・脈拍 132・冷汗","BP 84/48, pulse 132, cold sweat")],
+ good:{ja:"626号室、34歳の経産婦、前回帝王切開の試験分娩中です。突然の激痛のあと出血が900mlで増えています。胎児心拍が低下し、腹部が張っています。血圧84/48、脈拍132、冷汗があります。子宮破裂を疑います。至急来てください、グレードA帝王切開の準備と応援をお願いします。",
+  en:"Room 626, a 34-year-old woman in a trial of labor after a previous cesarean. After sudden severe pain, bleeding is 900 ml and increasing. The fetal heart rate is falling and her abdomen is distended. BP is 84 over 48, pulse 132, with cold sweat. I suspect uterine rupture. Please come immediately, prepare a Grade A cesarean and send more help."}}
+);
+/* Scene 3: maternal deterioration */
+SCENES.push({
+ id:"crit",icon:"🚨",target:30,lead:"problem",
+ title:{ja:"母体の急変・重症化",en:"Maternal deterioration"},
+ sub:{ja:"子癇・肺塞栓・心筋症・DVTなどをランダム出題",en:"Eclampsia, PE, cardiomyopathy, DVT and more, in random order"},
+ alert:{ja:"⚠ 産褥期・状態が急変",en:"⚠ Postpartum · sudden deterioration"},
+ line:{ja:"「635号室、患者さんの様子が急に悪くなりました」",en:"\"Room 635 — the patient suddenly got worse.\""},
+ greet:{ja:"「はい、産科当直。どうした？ 手短に」",en:"\"OB on call. What's going on? Be quick.\""},
+ ok:{ja:"「了解、すぐ行く。酸素とルートを確保して、モニターを付けて、応援も呼んでおいて」",en:"\"Got it, I'm coming. Give oxygen, secure IV access, attach the monitor and call for backup.\""},
+ chart:[],
+ elements:[
+  {id:"who",l:"S",w:10,key:false,label:{ja:"患者の特定（部屋・年齢）",en:"Who (room, age)"},
+   ask:{ja:"「どの患者さん？ 部屋番号は？」",en:"\"Which patient? What room?\""},
+   ja:/\d{1,4}\s*号室|号室|\d+\s*歳|初産|経産|褥婦|患者/,
+   en:/room\s*\d+|\d+[- ]?(?:years?|yo|y\/o)|\bpatient\b|\bmother\b/},
+  {id:"problem",l:"S",w:30,key:true,label:{ja:"主な症状（けいれん・呼吸困難など）",en:"Main problem (seizure, breathlessness...)"},
+   ask:{ja:"「いま何が起きてる？ 症状を教えて」",en:"\"What is happening? What are the symptoms?\""},
+   ja:/痙攣|けいれん|発作|呼吸困難|息苦|息切れ|胸痛|胸が痛|咳|泡沫|腫れ|腫脹|浮腫|頭痛|視野|意識|悪寒|発熱|腹痛|ふくらはぎ|反射/,
+   en:/seizure|convuls|\bfit\b|short(?:ness)? of breath|breathless|chest pain|cough|froth|swell|swollen|headache|vision|unconscious|unresponsive|drowsy|fever|chills|abdominal pain|calf|reflex/i},
+  {id:"timing",l:"B",w:10,key:false,label:{ja:"経過（産後日数・分娩様式）",en:"Course (days since birth, mode)"},
+   ask:{ja:"",en:""},
+   ja:/産後\s*\d+|産褥\s*\d+|分娩後|帝王切開|経腟分娩|妊娠\s*\d+\s*週|\d+\s*日目/,
+   en:/postpartum|after (?:delivery|birth|c-section|cesarean)|\d+\s*weeks|day\s*\d+|\d+\s*days?\b|delivered/i},
+  {id:"vitals",l:"A",w:20,key:true,label:{ja:"バイタル（血圧・脈拍・SpO2）",en:"Vitals (BP, pulse, SpO2)"},
+   ask:{ja:"「バイタルは？ 血圧、脈拍、SpO2を教えて」",en:"\"What are her vitals? BP, pulse, SpO2?\""},
+   ja:/血圧|脈拍|心拍|バイタル|SpO2|サチュ|酸素飽和|呼吸数|体温|\d{2,3}\s*[\/]\s*\d{2,3}|HR\s*\d+|脈\s*\d+/i,
+   en:/blood pressure|\bBP\b|pulse|heart rate|\bHR\b|vitals?|spo2|saturation|respiratory rate|temperature|temp\b|\d{2,3}\s*\/\s*\d{2,3}/i},
+  {id:"suspect",l:"A",w:15,key:true,label:{ja:"疑う病態（あなたの判断）",en:"Suspected condition (your assessment)"},
+   ask:{ja:"「何を疑ってる？ あなたの判断は？」",en:"\"What do you suspect? What's your assessment?\""},
+   ja:/疑い|疑う|疑って|子癇|肺塞栓|心筋症|血栓|DVT|心不全|敗血症|羊水塞栓|HELLP|ヘルプ症候群|高血圧|硫酸マグネシウム中毒|マグネシウム中毒/i,
+   en:/suspect|eclampsia|embolism|\bPE\b|cardiomyopathy|thrombosis|\bDVT\b|heart failure|sepsis|HELLP|pre-?eclampsia|hypertensi|toxicity/i},
+  {id:"request",l:"R",w:15,key:true,label:{ja:"依頼内容",en:"Your request"},
+   ask:{ja:"「で、私に何をしてほしい？ はっきり言って」",en:"\"So what do you need from me? Be specific.\""},
+   ja:/診察|診て|来て|きて|指示|至急|お願い|応援|コール|ICU|CT|ヘパリン|マグネ|酸素|救急|対応|オーダー/,
+   en:/please (?:come|see|check|examine|order)|come (?:now|right|to|and)|orders?\b|\bhelp\b|immediately|right away|could you|can you|oxygen|magnesium|\bICU\b|heparin|rapid response|\bCT\b/i}
+ ],
+ cases:[
+ {alert:{ja:"🚨 産褥2日・けいれん発作（子癇）",en:"🚨 Postpartum day 2 · seizure (eclampsia)"},
+  line:{ja:"「635号室、頭痛のあと全身けいれんを起こしています」",en:"\"Room 635 — after a headache she is having a full-body seizure.\""},
+  chart:[ci("🛏","635号室","Room 635"),ci("👩","31歳・初産婦（妊娠高血圧症候群）","31 y/o, first birth (hypertensive disorder)"),ci("👶","経腟分娩・2日前","Vaginal birth, 2 days ago"),ci("⚡","頭痛のあと全身けいれん・約1分","Headache, then full-body seizure, about 1 min"),ci("📉","血圧 186/114・脈拍 104・SpO2 93%","BP 186/114, pulse 104, SpO2 93%"),ci("😵","意識もうろう","Drowsy, confused")],
+  good:{ja:"635号室、31歳の初産婦、産後2日です。頭痛のあと全身けいれんが約1分ありました。血圧186/114、脈拍104、SpO2 93%で意識がもうろうとしています。子癇発作を疑います。至急来てください、硫酸マグネシウムの指示と応援をお願いします。",
+   en:"Room 635, a 31-year-old first-time mother, 2 days postpartum. After a headache she had a full-body seizure for about a minute. BP is 186 over 114, pulse 104, SpO2 93%, and she is drowsy. I suspect eclampsia. Please come immediately and give orders for magnesium, and send more help."}},
+ {alert:{ja:"🚨 帝王切開後3日・突然の呼吸困難（肺塞栓）",en:"🚨 3 days after C-section · sudden breathlessness (PE)"},
+  line:{ja:"「636号室、突然の胸痛と息苦しさを訴えています」",en:"\"Room 636 — she suddenly has chest pain and can't breathe well.\""},
+  chart:[ci("🛏","636号室","Room 636"),ci("👩","38歳・経産婦（肥満）","38 y/o, second birth (obese)"),ci("🏥","帝王切開・3日後・離床後すぐ","C-section 3 days ago, just after walking"),ci("🫁","突然の呼吸困難と胸痛","Sudden breathlessness and chest pain"),ci("📉","血圧 94/60・脈拍 128・SpO2 84%","BP 94/60, pulse 128, SpO2 84%"),ci("🦵","左ふくらはぎが腫れている","Left calf swollen")],
+  good:{ja:"636号室、38歳の経産婦、帝王切開後3日です。離床後に突然の呼吸困難と胸痛があります。血圧94/60、脈拍128、SpO2 84%です。左ふくらはぎが腫れており、肺塞栓を疑います。至急来てください、酸素投与とCTの指示をお願いします。",
+   en:"Room 636, a 38-year-old woman, 3 days after C-section. Sudden breathlessness and chest pain after getting up. BP is 94 over 60, pulse 128, SpO2 84%. Her left calf is swollen and I suspect pulmonary embolism. Please come immediately and give orders for oxygen and a CT."}},
+ {alert:{ja:"🚨 産後10日・息切れと泡沫痰（産褥心筋症）",en:"🚨 10 days postpartum · breathless with frothy sputum (cardiomyopathy)"},
+  line:{ja:"「637号室、横になると苦しく、ピンクの痰が出ています」",en:"\"Room 637 — she can't breathe lying down and is coughing pink sputum.\""},
+  chart:[ci("🛏","637号室（再入院）","Room 637 (readmitted)"),ci("👩","36歳・経産婦","36 y/o, third birth"),ci("👶","経腟分娩・10日前","Vaginal birth, 10 days ago"),ci("🫁","起座呼吸・ピンク色の泡沫痰","Orthopnea, pink frothy sputum"),ci("📉","血圧 98/62・脈拍 120・SpO2 88%","BP 98/62, pulse 120, SpO2 88%"),ci("🦶","両下肢の浮腫","Both legs swollen")],
+  good:{ja:"637号室、36歳の経産婦、産後10日で再入院の方です。起座呼吸とピンク色の泡沫痰があります。血圧98/62、脈拍120、SpO2 88%で、両下肢の浮腫があります。産褥心筋症による心不全を疑います。至急来てください、酸素投与と循環器科への連絡をお願いします。",
+   en:"Room 637, a 36-year-old woman readmitted 10 days postpartum. She has orthopnea and pink frothy sputum. BP is 98 over 62, pulse 120, SpO2 88%, with swollen legs. I suspect heart failure from peripartum cardiomyopathy. Please come immediately and give orders for oxygen and a cardiology call."}},
+ {alert:{ja:"⚠ 帝王切開後5日・片足の腫れと痛み（DVT）",en:"⚠ 5 days after C-section · swollen painful leg (DVT)"},
+  line:{ja:"「638号室、左のふくらはぎが腫れて痛いと言っています」",en:"\"Room 638 — she says her left calf is swollen and painful.\""},
+  chart:[ci("🛏","638号室","Room 638"),ci("👩","34歳・初産婦","34 y/o, first birth"),ci("🏥","帝王切開・5日後","C-section, 5 days ago"),ci("🦵","左ふくらはぎの腫れ・熱感・圧痛","Left calf swollen, warm and tender"),ci("📉","血圧 120/74・脈拍 96・SpO2 98%","BP 120/74, pulse 96, SpO2 98%"),ci("✅","胸痛・呼吸困難なし","No chest pain or breathlessness")],
+  good:{ja:"638号室、34歳の初産婦、帝王切開後5日です。左ふくらはぎの腫れと痛み、熱感があります。血圧120/74、脈拍96、SpO2 98%で、胸痛や呼吸困難はありません。深部静脈血栓症を疑います。診察と超音波検査の指示をお願いします。",
+   en:"Room 638, a 34-year-old first-time mother, 5 days after C-section. Her left calf is swollen, painful and warm. BP is 120 over 74, pulse 96, SpO2 98%, with no chest pain or breathlessness. I suspect deep vein thrombosis. Please come to examine her and give orders for an ultrasound."}},
+ {alert:{ja:"🚨 分娩直後・突然の呼吸困難とけいれん（羊水塞栓）",en:"🚨 Just after birth · sudden breathlessness and seizure (amniotic fluid embolism)"},
+  line:{ja:"「分娩室3、分娩直後に急に呼吸が苦しくなり、意識がありません」",en:"\"Delivery room 3 — right after birth she suddenly can't breathe and is unresponsive.\""},
+  chart:[ci("🛏","分娩室3","Delivery room 3"),ci("👩","35歳・経産婦","35 y/o, second birth"),ci("👶","経腟分娩・5分前","Vaginal birth, 5 min ago"),ci("🫁","突然の呼吸困難・けいれん・意識消失","Sudden breathlessness, seizure, unconscious"),ci("📉","血圧 70/40・脈拍 140・SpO2 78%","BP 70/40, pulse 140, SpO2 78%"),ci("🩸","出血が止まらない","Bleeding won't stop")],
+  good:{ja:"分娩室3、35歳の経産婦、分娩後5分です。突然の呼吸困難とけいれんのあと意識がありません。血圧70/40、脈拍140、SpO2 78%で出血も止まりません。羊水塞栓を疑います。至急来てください、救急コールと応援をお願いします。",
+   en:"Delivery room 3, a 35-year-old woman, 5 minutes after birth. Sudden breathlessness and a seizure, and now she is unresponsive. BP is 70 over 40, pulse 140, SpO2 78%, and bleeding won't stop. I suspect amniotic fluid embolism. Please come immediately, call a rapid response and send more help."}},
+ {alert:{ja:"🚨 産後3日・高熱と血圧低下（敗血症）",en:"🚨 3 days postpartum · high fever and low BP (sepsis)"},
+  line:{ja:"「639号室、悪寒がして高熱で、ぐったりしています」",en:"\"Room 639 — shaking chills, a high fever, and she is limp.\""},
+  chart:[ci("🛏","639号室","Room 639"),ci("👩","29歳・初産婦","29 y/o, first birth"),ci("👶","帝王切開・3日後","C-section, 3 days ago"),ci("🌡","体温 39.4℃・悪寒戦慄","Temp 39.4°C, shaking chills"),ci("📉","血圧 84/46・脈拍 134・SpO2 94%","BP 84/46, pulse 134, SpO2 94%"),ci("🫄","子宮の圧痛・悪臭のある悪露","Uterine tenderness, foul lochia")],
+  good:{ja:"639号室、29歳の初産婦、帝王切開後3日です。悪寒と39.4度の高熱があり、ぐったりしています。血圧84/46、脈拍134、SpO2 94%です。子宮の圧痛と悪臭のある悪露があり、敗血症を疑います。至急診察と、培養と抗菌薬の指示をお願いします。",
+   en:"Room 639, a 29-year-old first-time mother, 3 days after C-section. Chills and a fever of 39.4, and she is limp. BP is 84 over 46, pulse 134, SpO2 94%. The uterus is tender with foul lochia, and I suspect sepsis. Please come right away and give orders for cultures and antibiotics."}},
+ {alert:{ja:"🚨 重症妊娠高血圧腎症・頭痛と視野異常",en:"🚨 Severe preeclampsia · headache and visual disturbance"},
+  line:{ja:"「640号室、強い頭痛と目がちかちかすると言っています」",en:"\"Room 640 — a severe headache and flashing lights in her eyes.\""},
+  chart:[ci("🛏","640号室","Room 640"),ci("👩","33歳・初産婦・妊娠35週","33 y/o, first birth, 35 weeks"),ci("🧠","強い頭痛・目がちかちか","Severe headache, flashing lights"),ci("📉","血圧 176/108・脈拍 92・SpO2 97%","BP 176/108, pulse 92, SpO2 97%"),ci("🧪","尿蛋白 3+・下肢の浮腫","Urine protein 3+, leg swelling"),ci("⚡","腱反射が亢進","Hyperreflexia")],
+  good:{ja:"640号室、33歳の初産婦、妊娠35週です。強い頭痛と視野異常があります。血圧176/108、脈拍92、SpO2 97%で、尿蛋白3プラス、腱反射が亢進しています。子癇前症の重症化を疑います。至急診察と降圧薬、硫酸マグネシウムの指示をお願いします。",
+   en:"Room 640, a 33-year-old first-time mother at 35 weeks. Severe headache and visual disturbance. BP is 176 over 108, pulse 92, SpO2 97%, urine protein 3+, with brisk reflexes. I suspect severe preeclampsia. Please come right away and give orders for antihypertensives and magnesium."}},
+ {alert:{ja:"🚨 妊娠38週・右上腹部痛と嘔気（HELLP症候群）",en:"🚨 38 weeks · right upper abdominal pain and nausea (HELLP)"},
+  line:{ja:"「641号室、みぞおちから右の上腹部が強く痛いそうです」",en:"\"Room 641 — severe pain in her upper right abdomen.\""},
+  chart:[ci("🛏","641号室","Room 641"),ci("👩","30歳・初産婦・妊娠38週","30 y/o, first birth, 38 weeks"),ci("😣","右上腹部痛・嘔気・嘔吐","Right upper abdominal pain, nausea, vomiting"),ci("📉","血圧 168/104・脈拍 100・SpO2 96%","BP 168/104, pulse 100, SpO2 96%"),ci("🧪","血小板 6万・AST 320","Platelets 60k, AST 320"),ci("🩸","歯肉から出血","Gums bleeding")],
+  good:{ja:"641号室、30歳の初産婦、妊娠38週です。右上腹部痛と嘔吐があります。血圧168/104、脈拍100、SpO2 96%で、血小板6万、AST 320です。HELLP症候群を疑います。至急診察と、早期の娩出の相談をお願いします。",
+   en:"Room 641, a 30-year-old first-time mother at 38 weeks. Right upper abdominal pain and vomiting. BP is 168 over 104, pulse 100, SpO2 96%, platelets 60 thousand, AST 320. I suspect HELLP syndrome. Please come right away and discuss early delivery."}},
+ {alert:{ja:"🚨 硫酸マグネシウム投与中・呼吸が浅い（中毒の疑い）",en:"🚨 On magnesium sulfate · shallow breathing (toxicity?)"},
+  line:{ja:"「635号室、マグネシウム投与中で、呼びかけに反応が鈍く呼吸がゆっくりです」",en:"\"Room 635 — on magnesium, slow to respond, and breathing slowly.\""},
+  chart:[ci("🛏","635号室","Room 635"),ci("👩","31歳・初産婦・産後1日","31 y/o, first birth, postpartum day 1"),ci("💉","硫酸マグネシウム持続投与中","Magnesium sulfate infusion running"),ci("🫁","呼吸数 8回/分・SpO2 90%","Respiratory rate 8/min, SpO2 90%"),ci("⚡","膝蓋腱反射が消失","Knee reflexes absent"),ci("📉","血圧 138/84・脈拍 70","BP 138/84, pulse 70")],
+  good:{ja:"635号室、31歳の初産婦、産後1日です。硫酸マグネシウム投与中で、呼吸数8回、SpO2 90%、膝蓋腱反射が消失しています。血圧138/84、脈拍70です。マグネシウム中毒を疑い、投与を止めています。至急来てください、グルコン酸カルシウムの指示をお願いします。",
+   en:"Room 635, a 31-year-old first-time mother, postpartum day 1. On magnesium sulfate, respiratory rate is 8, SpO2 90%, and knee reflexes are absent. BP is 138 over 84, pulse 70. I suspect magnesium toxicity and have stopped the infusion. Please come immediately and give orders for calcium gluconate."}}
+ ]
+});
+/* Scene 4: labor emergencies */
+SCENES.push({
+ id:"labor",icon:"👶",target:30,lead:"problem",
+ title:{ja:"分娩中の危機",en:"Labor emergencies"},
+ sub:{ja:"肩甲難産・子宮内反・骨盤位・急遂分娩などをランダム出題",en:"Shoulder dystocia, inversion, breech, urgent delivery and more"},
+ alert:{ja:"⚠ 分娩中・状況が急変",en:"⚠ During labor · sudden change"},
+ line:{ja:"「分娩室2、分娩が急に危なくなりました」",en:"\"Delivery room 2 — the birth suddenly became dangerous.\""},
+ greet:{ja:"「はい、産科当直。どうした？ 手短に」",en:"\"OB on call. What's going on? Be quick.\""},
+ ok:{ja:"「了解、すぐ行く。応援を呼んで、手術室と新生児科にも連絡しておいて」",en:"\"Got it, I'm coming. Call for backup, and alert the OR and the neonatal team.\""},
+ chart:[],
+ elements:[
+  {id:"who",l:"S",w:10,key:false,label:{ja:"患者の特定（部屋・年齢）",en:"Who (room, age)"},
+   ask:{ja:"「どの患者さん？ 部屋番号は？」",en:"\"Which patient? What room?\""},
+   ja:/\d{1,4}\s*号室|号室|分娩室\s*\d|\d+\s*歳|初産|経産|産婦/,
+   en:/room\s*\d+|delivery room|\d+[- ]?(?:years?|yo|y\/o)|\bpatient\b|\bwoman\b/i},
+  {id:"problem",l:"S",w:30,key:true,label:{ja:"主な問題（肩が出ない・内反など）",en:"Main problem (stuck shoulders, inversion...)"},
+   ask:{ja:"「いま何が起きてる？ 何が問題？」",en:"\"What is happening? What's the problem?\""},
+   ja:/肩甲難産|肩が(?:出|引っ|つか)|内反|骨盤位|逆子|臀位|足が|横位|斜位|胎位|分娩停止|遷延|進まない|胎便|羊水混濁|徐脈|胎児機能不全|心拍(?:が)?低下|低血圧|血圧(?:が)?(?:低下|下が)|脱出/,
+   en:/shoulder dystocia|shoulders?\b[^.]{0,20}(?:stuck|not|won'?t)|inver(?:sion|ted)|breech|transverse|oblique|malpresent|arrest|prolonged|not progress|meconium|bradycardia|fetal distress|heart rate (?:drop|fall)|hypotension|low (?:BP|blood pressure)|prolapse/i},
+  {id:"timing",l:"B",w:10,key:false,label:{ja:"経過（週数・子宮口・時間）",en:"Course (weeks, dilation, time)"},
+   ask:{ja:"",en:""},
+   ja:/妊娠\s*\d+\s*週|週|子宮口|全開|\d+\s*cm|\d+\s*分|\d+\s*時間|分娩(?:中|後)|胎盤/,
+   en:/\d+\s*weeks|cervix|dilat|fully|\d+\s*cm|\d+\s*(?:min|hours?)|in labor|placenta/i},
+  {id:"vitals",l:"A",w:20,key:true,label:{ja:"バイタル・胎児心拍",en:"Vitals and fetal heart rate"},
+   ask:{ja:"「母体のバイタルと胎児心拍は？」",en:"\"Maternal vitals and the fetal heart rate?\""},
+   ja:/血圧|脈拍|心拍|児心音|バイタル|SpO2|bpm|\d{2,3}\s*\/\s*\d{2,3}|ショック/i,
+   en:/blood pressure|\bBP\b|pulse|heart rate|\bFHR\b|vitals?|spo2|bpm|\d{2,3}\s*\/\s*\d{2,3}|shock/i},
+  {id:"suspect",l:"A",w:15,key:true,label:{ja:"判断（疑う病態）",en:"Your assessment"},
+   ask:{ja:"「何を疑ってる？ あなたの判断は？」",en:"\"What do you suspect? What's your assessment?\""},
+   ja:/疑い|疑う|疑って|判断|考え/,
+   en:/suspect|assess|think it|concern(?:ed)? (?:for|about)|likely/i},
+  {id:"request",l:"R",w:15,key:true,label:{ja:"依頼内容",en:"Your request"},
+   ask:{ja:"「で、私に何をしてほしい？ はっきり言って」",en:"\"So what do you need from me? Be specific.\""},
+   ja:/診察|診て|来て|きて|指示|至急|お願い|応援|吸引|鉗子|帝王切開|カイザー|グレード|麻酔科|新生児科|手術室|オキシトシン/,
+   en:/please (?:come|see|check|examine)|come (?:now|right|to|and)|orders?\b|\bhelp\b|immediately|right away|could you|can you|vacuum|forceps|c-section|cesarean|grade [abc]|anesthe|neonatal|operating (?:room|theat)/i}
+ ],
+ cases:[
+ {alert:{ja:"🚨 児頭娩出後・肩が出ない（肩甲難産）",en:"🚨 Head born, shoulders stuck (shoulder dystocia)"},
+  line:{ja:"「分娩室2、児頭が出たのに肩が出ません」",en:"\"Delivery room 2 — the head is out but the shoulders won't deliver.\""},
+  chart:[ci("🛏","分娩室2","Delivery room 2"),ci("👩","30歳・初産婦・妊娠41週","30 y/o, first birth, 41 weeks"),ci("👶","推定体重 4200g・糖尿病合併","Estimated weight 4200 g, diabetes"),ci("⏱","児頭娩出から1分経過","1 min since the head was born"),ci("🫀","亀の頭のように児頭が引っ込む","Head retracts like a turtle"),ci("📉","母体 血圧 126/78・脈拍 100","Mother BP 126/78, pulse 100")],
+  good:{ja:"分娩室2、30歳の初産婦、妊娠41週です。児頭娩出から1分で、肩が出ません。肩甲難産を疑います。推定体重4200gです。母体は血圧126/78、脈拍100です。マックロバーツ体位をとっています。至急来てください、新生児科と応援もお願いします。",
+   en:"Delivery room 2, a 30-year-old first-time mother at 41 weeks. The head was born 1 minute ago and the shoulders won't deliver. I suspect shoulder dystocia. Estimated weight is 4200 g. Mother's BP is 126 over 78, pulse 100. We are using McRoberts position. Please come immediately, and send the neonatal team and more help."}},
+ {alert:{ja:"🚨 胎盤娩出直後・ショックと腟内の腫瘤（子宮内反）",en:"🚨 Just after placenta · shock and a mass in the vagina (uterine inversion)"},
+  line:{ja:"「分娩室1、胎盤のあとに腟から丸い塊が出て、血圧が下がっています」",en:"\"Delivery room 1 — after the placenta a round mass came out of the vagina and her BP is dropping.\""},
+  chart:[ci("🛏","分娩室1","Delivery room 1"),ci("👩","27歳・経産婦","27 y/o, second birth"),ci("👶","経腟分娩・胎盤娩出の直後","Vaginal birth, just after the placenta"),ci("🫀","子宮底が触れない・腟に腫瘤","Fundus not palpable; mass in the vagina"),ci("🩸","出血量 700ml・強い痛み","Blood loss 700 ml, severe pain"),ci("📉","血圧 78/42・脈拍 136","BP 78/42, pulse 136")],
+  good:{ja:"分娩室1、27歳の経産婦、胎盤娩出の直後です。子宮底が触れず、腟に腫瘤があり、子宮内反を疑います。出血700ml、血圧78/42、脈拍136でショックです。オキシトシンは止めています。至急来てください、整復と応援をお願いします。",
+   en:"Delivery room 1, a 27-year-old woman, just after the placenta. The fundus is not palpable and there is a mass in the vagina, so I suspect uterine inversion. Blood loss 700 ml, BP 78 over 42, pulse 136, in shock. I have stopped the oxytocin. Please come immediately and help with replacement, and send more help."}},
+ {alert:{ja:"🚨 骨盤位・急に進行して臀部が見える",en:"🚨 Breech · labor suddenly advanced, buttocks visible"},
+  line:{ja:"「分娩室3、逆子の方の臀部が見えてきました」",en:"\"Delivery room 3 — the breech baby's buttocks are showing.\""},
+  chart:[ci("🛏","分娩室3","Delivery room 3"),ci("👩","32歳・経産婦・妊娠37週","32 y/o, second birth, 37 weeks"),ci("🔄","骨盤位・子宮口 全開","Breech, fully dilated"),ci("🍑","臀部が陰裂に見える・いきみたい","Buttocks visible; urge to push"),ci("📈","児心拍 140 bpm","Fetal heart rate 140 bpm"),ci("⏱","全開から10分","10 min since full dilation")],
+  good:{ja:"分娩室3、32歳の経産婦、妊娠37週で骨盤位です。子宮口は全開から10分で、臀部が見えています。児心拍は140です。骨盤位の経腟分娩が急に進んでいると判断します。至急来てください、新生児科と応援もお願いします。",
+   en:"Delivery room 3, a 32-year-old woman at 37 weeks with a breech baby. Fully dilated for 10 minutes and the buttocks are visible. Fetal heart rate is 140. I think the breech birth is advancing quickly. Please come immediately, and send the neonatal team and more help."}},
+ {alert:{ja:"⚠ 分娩が進まない・微弱陣痛と発熱（遷延分娩）",en:"⚠ Labor not progressing · weak contractions and fever (prolonged labor)"},
+  line:{ja:"「604号室、24時間たっても子宮口が進みません」",en:"\"Room 604 — still no progress after 24 hours.\""},
+  chart:[ci("🛏","604号室","Room 604"),ci("👩","28歳・初産婦・妊娠40週","28 y/o, first birth, 40 weeks"),ci("⏱","陣痛開始から24時間・子宮口 6cmで4時間停止","24 h of labor; stuck at 6 cm for 4 h"),ci("🫄","陣痛が弱く、間隔が不規則","Weak, irregular contractions"),ci("🌡","体温 38.0℃","Temp 38.0°C"),ci("📈","児心拍 160 bpm","Fetal heart rate 160 bpm")],
+  good:{ja:"604号室、28歳の初産婦、妊娠40週です。陣痛開始から24時間で、子宮口は6cmで4時間進まず、遷延分娩と判断します。陣痛は弱く、体温38.0度、児心拍160です。診察と、オキシトシンか帝王切開の方針の指示をお願いします。",
+   en:"Room 604, a 28-year-old first-time mother at 40 weeks. After 24 hours of labor she has been stuck at 6 cm for 4 hours, so I assess prolonged labor. Contractions are weak, temperature 38.0, fetal heart rate 160. Please come to examine her and give orders on oxytocin or cesarean."}},
+ {alert:{ja:"🚨 陣痛中に横位と判明・破水あり",en:"🚨 Transverse lie found in labor · waters broken"},
+  line:{ja:"「608号室、内診で児頭が触れず、横向きのようです」",en:"\"Room 608 — on exam I can't feel the head; the baby seems to be lying sideways.\""},
+  chart:[ci("🛏","608号室","Room 608"),ci("👩","35歳・経産婦・妊娠38週","35 y/o, third birth, 38 weeks"),ci("🔄","児頭が触れず、肩のような部分が触れる","No head felt; a shoulder-like part felt"),ci("💧","破水・30分前","Waters broke 30 min ago"),ci("📈","児心拍 128 bpm","Fetal heart rate 128 bpm"),ci("🫄","陣痛は約3分ごと","Contractions about every 3 min")],
+  good:{ja:"608号室、35歳の経産婦、妊娠38週です。陣痛中に横位が判明しました。30分前に破水しています。児心拍は128で、陣痛は3分ごとです。臍帯脱出に注意しています。至急診察をお願いします、帝王切開の準備もお願いします。",
+   en:"Room 608, a 35-year-old woman at 38 weeks. A transverse lie was found in labor. Her waters broke 30 minutes ago. Fetal heart rate is 128 and contractions are every 3 minutes. I am watching for cord prolapse. Please come right away and prepare for a cesarean."}},
+ {alert:{ja:"🚨 児頭が見えているのに心拍低下・吸引分娩の相談",en:"🚨 Head visible but heart rate falling · urgent vacuum delivery"},
+  line:{ja:"「分娩室4、いきんでいますが心拍が60台に落ちて戻りません」",en:"\"Delivery room 4 — she is pushing but the heart rate fell to the 60s and won't recover.\""},
+  chart:[ci("🛏","分娩室4","Delivery room 4"),ci("👩","26歳・初産婦・妊娠39週","26 y/o, first birth, 39 weeks"),ci("🚪","子宮口 全開・児頭 +3","Fully dilated, station +3"),ci("📈","心拍 60台・3分以上持続","FHR in the 60s, over 3 min"),ci("〰","細変動 消失","Variability absent"),ci("⏱","いきみ開始から40分","Pushing for 40 min")],
+  good:{ja:"分娩室4、26歳の初産婦、妊娠39週です。子宮口は全開で児頭は+3、いきみ開始から40分です。心拍が60台まで低下して3分以上続き、細変動が消失しています。胎児機能不全と判断します。至急来てください、吸引分娩の準備と新生児科をお願いします。",
+   en:"Delivery room 4, a 26-year-old first-time mother at 39 weeks. Fully dilated, station +3, pushing for 40 minutes. The heart rate has fallen to the 60s for over 3 minutes and variability is absent. I assess fetal distress. Please come immediately, and prepare a vacuum delivery and call the neonatal team."}},
+ {alert:{ja:"⚠ 無痛分娩の開始後・血圧が急に低下",en:"⚠ After epidural · sudden drop in blood pressure"},
+  line:{ja:"「610号室、硬膜外麻酔のあと血圧が下がって気分が悪そうです」",en:"\"Room 610 — after the epidural her BP dropped and she feels sick.\""},
+  chart:[ci("🛏","610号室","Room 610"),ci("👩","31歳・初産婦・妊娠39週","31 y/o, first birth, 39 weeks"),ci("💉","硬膜外麻酔・15分前","Epidural, 15 min ago"),ci("📉","血圧 82/44・脈拍 110","BP 82/44, pulse 110"),ci("🤢","嘔気・めまい","Nausea and dizziness"),ci("📈","児心拍 100 bpm（徐脈）","Fetal heart rate 100 bpm (bradycardia)")],
+  good:{ja:"610号室、31歳の初産婦、妊娠39週です。硬膜外麻酔の15分後に、血圧82/44、脈拍110と低血圧になり、嘔気があります。児心拍も100と徐脈です。麻酔による低血圧を疑います。左側臥位にして輸液を全開にしています。至急来てください、麻酔科への連絡もお願いします。",
+   en:"Room 610, a 31-year-old first-time mother at 39 weeks. 15 minutes after the epidural her BP is 82 over 44, pulse 110, with nausea. Fetal heart rate is also low at 100. I suspect hypotension from the epidural. She is on her left side and fluids are wide open. Please come immediately and call anesthesia."}},
+ {alert:{ja:"⚠ 羊水が緑色に混濁・心拍も不安定（胎便）",en:"⚠ Green-stained fluid · unstable heart rate (meconium)"},
+  line:{ja:"「615号室、破水したら羊水が濃い緑色で、心拍が不安定です」",en:"\"Room 615 — her waters broke thick green and the heart rate is unstable.\""},
+  chart:[ci("🛏","615号室","Room 615"),ci("👩","29歳・初産婦・妊娠41週","29 y/o, first birth, 41 weeks"),ci("💧","破水・羊水が濃い緑色（胎便）","Waters broke; thick green fluid (meconium)"),ci("📈","基線 170 bpm・変動一過性徐脈","Baseline 170 bpm, variable decels"),ci("🚪","子宮口 5cm","Cervix 5 cm"),ci("🫄","陣痛は約2分ごと","Contractions every 2 min")],
+  good:{ja:"615号室、29歳の初産婦、妊娠41週です。破水し、羊水が濃い緑色に混濁しています。子宮口は5cmで、基線170、変動一過性徐脈があります。胎児機能不全を疑います。至急診察と、新生児科への連絡をお願いします。",
+   en:"Room 615, a 29-year-old first-time mother at 41 weeks. Her waters broke with thick green meconium. Cervix is 5 cm, baseline is 170 with variable decelerations. I suspect fetal distress. Please come right away to examine her and call the neonatal team."}}
+ ]
+});
+SCENES.forEach(s=>s.n=-1);
+const RAM={ja:"えーと、あの、昨日からずっと見ている方なんですけど、えーと、ご家族も付き添っていて、お子さんも元気で、それで、",en:"Um, so, uh, this is someone I have been watching since last night, and, you know, her family is with her and the baby is doing fine, and, um, "};
+const NIGHT_RX=/緊急ではな|急ぎではな|急ぎません|朝の回診|朝で|夜分|申し訳|お休み中|not urgent|isn'?t urgent|can wait|morning|sorry/i;
+
+function ctgSvg(k,base){
+  let f="",tc="";const C=k==="sin"?[]:[50,130,210,290],by=10+(180-base)*1.143,A={late:1.1,var:4,early:3,prol:4,tachy:1,sin:0,lmild:4,norm:4,brady:3.5,tachyM:3,varS:1.2}[k];
+  for(let x=0;x<=320;x+=3){
+    let y=by+Math.sin(x*1.9)*A+Math.sin(x*.7)*A/2;
+    if(k==="sin")y+=11*Math.sin(x/4.6);
+    C.forEach(c=>{let d;
+      if(k==="late"||k==="lmild"){d=x-c-14;y+=(k==="late"?34:16)*Math.exp(-d*d/160)}
+      else if(k==="var"||k==="varS"){d=x-c-8-(c%3)*3;y+=42*Math.exp(-d*d/50)}
+      else if(k==="early"){d=x-c;y+=16*Math.exp(-d*d/300)}});
+    if(k==="prol"){const d=x-200;y+=62*Math.min(1,1.5*Math.exp(-d*d/3000))}
+    y=Math.min(y,145);
+    let v=140;C.forEach(c=>{const d=x-c;v-=26*Math.exp(-d*d/320)});
+    f+=(x?"L":"M")+x+","+y.toFixed(1);tc+=(x?"L":"M")+x+","+v.toFixed(1);
+  }
+  return '<rect x="0" y="33" width="320" height="57" fill="#d9f2e4" opacity=".6"/>'
+   +'<g stroke="#f5cdd5" stroke-width="1"><path d="M0 10H320M0 33H320M0 56H320M0 90H320M0 100H320M0 145H320"/></g>'
+   +'<g fill="#7a5a60" font-size="8"><text x="2" y="19">180</text><text x="2" y="31">160</text><text x="2" y="88">110</text><text x="2" y="110">toco</text></g>'
+   +'<path d="'+f+'" fill="none" stroke="#c9485b" stroke-width="2"/>'
+   +'<path d="'+tc+'" fill="none" stroke="#7a5a60" stroke-width="1.6"/>';
+}
 
 /* ---------- state & helpers ---------- */
 const $=s=>document.querySelector(s);
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let lang="en",screen="home",sc=SCENES[0],call="idle",listening=false,micSec=null,t0=0,tick=null,rec=null,chartHidden=false,result=null,ringTO=null;
+let lang="en",screen="home",sc=SCENES[0],call="idle",listening=false,micSec=null,t0=0,tick=null,rec=null,chartHidden=false,result=null,ringTO=null,pick=null,cur=SCENES[0].cases[0];
+function nextCase(){
+  if(!sc.bag||!sc.bag.length){
+    const a=sc.cases.map((_,i)=>i);
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+    if(a.length>1&&a[a.length-1]===sc.n){const x=a.pop();a.unshift(x)}
+    sc.bag=a;
+  }
+  sc.n=sc.bag.pop();cur=sc.cases[sc.n];
+}
 const t=(k,p)=>{let s=(I18N[lang][k]!==undefined?I18N[lang][k]:k);if(p)for(const x in p)s=s.split("{"+x+"}").join(p[x]);return s};
 const L=o=>o[lang];
 const stars=n=>"★".repeat(n)+"☆".repeat(5-n);
@@ -347,11 +840,7 @@ function renderHome(){
     b.querySelector("b").textContent=L(s.title);b.querySelector("small").textContent=L(s.sub);
     b.onclick=()=>openScene(s);list.appendChild(b);
   });
-  /* placeholder for a future scene (CTG): add an object to SCENES to enable it */
-  const f=document.createElement("div");f.className="scene off";f.dataset.demo="scene-ctg-soon";
-  f.innerHTML='<span class="ic">📈</span><span><b></b><small></small></span><span class="badge"></span>';
-  f.querySelector("b").textContent=t("ctgTitle");f.querySelector("small").textContent=t("ctgSub");f.querySelector(".badge").textContent=t("soon");
-  list.appendChild(f);
+
   const box=$("#sbarBox");box.innerHTML="";
   [["S","sS","sSd"],["B","sB","sBd"],["A","sA","sAd"],["R","sR","sRd"]].forEach(a=>{
     const d=document.createElement("div");d.innerHTML="<b>"+a[0]+"</b><strong></strong><br><span></span>";
@@ -370,18 +859,28 @@ function getHist(){try{return JSON.parse(store("sbarHist")||"[]")}catch(e){retur
 function addHist(x){const h=getHist();h.unshift(x);store("sbarHist",JSON.stringify(h.slice(0,10)))}
 
 /* ---------- practice ---------- */
-function openScene(s){sc=s;resetPractice();setScreen("practice");renderPractice()}
+function openScene(s){sc=s;nextCase();resetPractice();setScreen("practice");renderPractice()}
 function resetPractice(){
-  stopListen(true);clearTimeout(ringTO);call="idle";micSec=null;$("#ta").value="";msg("");$("#timer").textContent="";callUI();
+  stopListen(true);clearTimeout(ringTO);call="idle";pick=null;micSec=null;$("#ta").value="";msg("");$("#timer").textContent="";callUI();
 }
 function renderPractice(){
-  $("#alertT").textContent=L(sc.alert);$("#alertL").textContent=L(sc.line);
+  $("#alertT").textContent=L(cur.alert||sc.alert);$("#alertL").textContent=L(cur.line||sc.line);
   const ul=$("#chartList");ul.innerHTML="";
-  sc.chart.forEach(c=>{const li=document.createElement("li");li.innerHTML="<i>"+c.i+"</i><span></span>";li.querySelector("span").textContent=L(c);ul.appendChild(li)});
+  cur.chart.forEach(c=>{const li=document.createElement("li");li.innerHTML="<i>"+c.i+"</i><span></span>";li.querySelector("span").textContent=L(c);ul.appendChild(li)});
   ul.hidden=chartHidden;$("#chartHid").hidden=!chartHidden;
   $("#chartToggle").textContent=chartHidden?t("showChart"):t("hideChart");
   $("#docGreet").textContent=L(sc.greet);
+  $("#scLbl").textContent="SCENARIO "+(SCENES.indexOf(sc)+1)+" · "+t("caseLbl",{n:sc.cases.indexOf(cur)+1,m:sc.cases.length});
+  renderCtg();
   callUI();
+}
+function renderCtg(){
+  const box=$("#ctgBox");box.hidden=!sc.levels;if(!sc.levels)return;
+  const sv=$("#ctgSvg");sv.innerHTML=ctgSvg(cur.k,cur.base);sv.setAttribute("aria-label",t("ctgAria"));
+  const lb=$("#lvBtns");lb.innerHTML="";
+  sc.levels.forEach((o,i)=>{const b=document.createElement("button");b.className="lvb"+(pick===i+1?" sel":"");b.dataset.demo="ctg-level-"+(i+1);b.textContent=L(o);b.onclick=()=>{pick=i+1;renderPractice()};lb.appendChild(b)});
+  const m=$("#lvMsg");if(!pick){m.hidden=true;return}
+  const ok=pick===cur.ans;m.className="msg"+(ok?" ok":"");m.textContent=(ok?t("lvOk"):t("lvNg"))+" "+L(cur.why);m.hidden=false;
 }
 function callUI(){
   const st=listening?"listen":call;
@@ -419,8 +918,10 @@ function stopListen(quiet){
   callUI();
 }
 $("#ta").addEventListener("input",()=>{micSec=null});
-$("#sGood").onclick=()=>{stopListen();$("#ta").value=sc.samples.good[lang];micSec=null;msg("")};
-$("#sLong").onclick=()=>{stopListen();$("#ta").value=sc.samples.long[lang];micSec=null;msg("")};
+$("#sGood").onclick=()=>{stopListen();$("#ta").value=cur.good[lang];micSec=null;msg("")};
+$("#sLong").onclick=()=>{stopListen();const g=cur.good[lang];
+  $("#ta").value=lang==="ja"?RAM.ja+g.replace(/、/g,"、えーと、").replace(/。(?=.)/g,"。あの、"):RAM.en+g.replace(/, /g,", um, ").replace(/\. (?=.)/g,". Uh, ");
+  micSec=null;msg("")};
 $("#clearBtn").onclick=()=>{$("#ta").value="";micSec=null;msg("")};
 $("#chartToggle").onclick=()=>{chartHidden=!chartHidden;renderPractice()};
 $("#backBtn").onclick=()=>{resetPractice();setScreen("home")};
@@ -428,7 +929,7 @@ $("#evalBtn").onclick=()=>{
   stopListen();
   const txt=$("#ta").value.trim();
   if(!txt){msg(t("emptyMsg"));return}
-  result=evaluate(txt,micSec);
+  result=evaluate(txt,micSec);result.sc=sc;result.cur=cur;result.pick=pick;
   addHist({p:result.pStars,b:result.bStars,n:result.dur});
   setScreen("result");renderResult();
 };
@@ -441,7 +942,7 @@ function evaluate(raw,mic){
   sc.elements.forEach(e=>{const m=rx(e).exec(text);found[e.id]=!!m;idx[e.id]=m?m.index:-1});
   let score=0;sc.elements.forEach(e=>{if(found[e.id])score+=e.w});
   const keys=sc.elements.filter(e=>e.key&&found[e.id]).sort((a,b)=>idx[a.id]-idx[b.id]);
-  const rank=found.bleed?keys.findIndex(e=>e.id==="bleed")+1:0;
+  const rank=found[sc.lead]?keys.findIndex(e=>e.id===sc.lead)+1:0;
   if(rank>1)score-=Math.min(30,(rank-1)*10);
   score=Math.max(0,score);
   const fillers=(text.match(FILL)||[]).length;
@@ -467,12 +968,13 @@ function meter(name,n,score,lines){
   return d;
 }
 function renderResult(){
-  const r=result;if(!r)return;
+  const r=result;if(!r)return;const sc=r.sc;
+  const lead=L(sc.elements.find(e=>e.id===sc.lead).label),leadX=lang==="en"?lead.toLowerCase():lead;
   $("#resTime").textContent="⏱ "+t("secs",{n:Math.round(r.dur)});
   const pl=[],bl=[];
-  if(!r.found.bleed)pl.push(t("fbPriNoBleed"));
-  else if(r.rank<=1)pl.push(t("fbPriGood"));
-  else pl.push(t("fbPriLate",{n:r.rank}));
+  if(!r.found[sc.lead])pl.push(t("fbPriNoBleed",{x:lead}));
+  else if(r.rank<=1)pl.push(t("fbPriGood",{x:leadX}));
+  else pl.push(t("fbPriLate",{x:lead,n:r.rank}));
   if(!r.found.request)pl.push(t("fbPriReq"));
   if(r.fillers>0)bl.push(t("fbBrFiller",{n:r.fillers}));
   if(r.dur>sc.target)bl.push(t("fbBrLong",{n:Math.round(r.dur),m:sc.target}));
@@ -499,12 +1001,18 @@ function renderResult(){
   tx.appendChild(document.createTextNode(r.text.slice(pos)));
   const ask=sc.elements.find(e=>!r.found[e.id]&&e.ask[lang]);
   r.reply=ask?L(ask.ask):L(sc.ok);
+  if(r.cur.night)r.reply=L(NIGHT_RX.test(r.text)?r.cur.night.soft:r.cur.night.angry);
   $("#resDoctor").textContent=r.reply;
+  const lc=$("#resLevelCard");lc.hidden=!sc.levels;
+  if(sc.levels){
+    const nm=i=>L(sc.levels[i-1]);const A=r.cur.ans;const ok=r.pick===A;
+    $("#resLevel").textContent=(r.pick?t("lvYours",{a:nm(r.pick)})+(ok?" ✓":" ✗　"+t("lvCorrect",{a:nm(A)})):t("lvNone")+" "+t("lvCorrect",{a:nm(A)}))+"　"+L(r.cur.why);
+  }
 }
 $("#spkBtn").onclick=()=>{
   try{const u=new SpeechSynthesisUtterance($("#resDoctor").textContent);u.lang=lang==="ja"?"ja-JP":"en-US";u.rate=1.1;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}
 };
-$("#retryBtn").onclick=()=>{resetPractice();setScreen("practice");renderPractice()};
+$("#retryBtn").onclick=()=>{nextCase();resetPractice();setScreen("practice");renderPractice()};
 $("#homeBtn").onclick=()=>{resetPractice();setScreen("home");renderHome()};
 $("#clearHist").onclick=()=>{store("sbarHist","[]");renderHome()};
 $("#langBtn").onclick=()=>{lang=lang==="ja"?"en":"ja";store("lang",lang);applyLang()};
