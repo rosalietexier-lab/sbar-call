@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; base-uri 'none'; form-action 'none'">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SBAR Call</title>
+<style>
+*{box-sizing:border-box;margin:0}
+:root{--bg:#fff6ef;--ink:#4a3338;--pink:#e57f93;--deep:#c9485b;--line:#f5cdd5;--mute:#7a5a60;--soft:#f6dfe3;--green:#d9f2e4;--gtx:#1f6e43;--amber:#fff0d6}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;line-height:1.6;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--deep);outline-offset:2px}
+[hidden]{display:none!important}
+.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:rgba(255,246,239,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px;letter-spacing:.5px}
+.brand b{color:var(--pink)}
+.logo{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--pink);font-size:18px}
+.lang{border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:700;color:var(--mute)}
+.lang span.on{color:var(--deep);text-decoration:underline;text-underline-offset:3px}
+.wrap{max-width:920px;margin:0 auto;padding:14px 16px 48px}
+.steps{list-style:none;display:flex;gap:8px;margin:2px 0 16px;padding:0}
+.steps li{flex:1;font-size:11px;color:var(--mute);border-top:8px solid var(--soft);border-radius:4px;padding-top:4px;transition:.3s}
+.steps li.on{border-color:var(--pink);color:var(--deep);font-weight:700}
+section{animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.tag{font-size:12px;color:#c0687b;letter-spacing:2px;font-weight:800}
+h1{font-size:26px;line-height:1.35;margin:4px 0 6px}
+h1 span{color:var(--deep)}
+h2{font-size:16px;margin:22px 0 10px;color:var(--deep)}
+h3{font-size:14px;margin-bottom:8px;color:var(--deep)}
+.lead{color:var(--mute);font-size:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 4px 12px rgba(217,138,155,.15);margin-bottom:12px}
+.scene{display:flex;width:100%;text-align:left;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 4px 12px rgba(217,138,155,.18);margin-bottom:10px;transition:transform .15s}
+.scene:hover{transform:translateY(-2px)}
+.scene .ic{font-size:30px}
+.scene b{display:block;font-size:15px}
+.scene small{color:var(--mute);font-size:12px}
+.scene .go{margin-left:auto;color:var(--deep);font-weight:800;font-size:20px}
+.scene.off{opacity:.55;cursor:default;border-style:dashed;box-shadow:none}
+.scene.off:hover{transform:none}
+.badge{margin-left:auto;font-size:11px;background:var(--soft);color:var(--mute);border-radius:10px;padding:2px 8px}
+.more{text-align:center;font-size:12px;color:var(--mute);margin-top:8px}
+.sbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sbar div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12px;color:var(--mute)}
+.sbar b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--pink);color:#fff;margin-right:6px;font-size:14px}
+.sbar strong{color:var(--ink);font-size:13px}
+.hist{font-size:13px;display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.hist:last-child{border:0}
+.star{color:#e8962a;letter-spacing:1px}
+.link{color:var(--deep);font-size:12px;text-decoration:underline;padding:4px 0}
+.alert{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 4px 12px rgba(217,138,155,.18);margin-bottom:12px}
+.alert b{color:var(--deep);font-size:13px}
+.alert p{font-size:16px;margin-top:4px}
+.grid{display:grid;gap:12px}
+@media(min-width:760px){.grid{grid-template-columns:1fr 1.1fr;align-items:start}h1{font-size:32px}.sbar{grid-template-columns:repeat(4,1fr)}}
+.row2{display:flex;justify-content:space-between;align-items:center}
+.chart{list-style:none;padding:0;font-size:14px}
+.chart li{display:flex;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.chart li:last-child{border:0}
+.chart i{font-style:normal;width:22px;text-align:center}
+.hide{color:var(--mute);font-size:13px;text-align:center;padding:14px 4px}
+.callbox{text-align:center}
+.status{font-size:12px;color:var(--mute);font-weight:700}
+.mic{display:grid;place-items:center;margin:16px auto 6px;width:104px;height:104px;border-radius:50%;background:var(--pink);font-size:42px;box-shadow:0 0 0 12px rgba(229,127,147,.2);transition:.2s}
+.mic:active{transform:scale(.95)}
+.mic.ringing{animation:ring .5s infinite alternate}
+.mic.listen{background:var(--deep);animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 6px rgba(201,72,91,.35)}100%{box-shadow:0 0 0 22px rgba(201,72,91,0)}}
+@keyframes ring{from{transform:rotate(-10deg)}to{transform:rotate(10deg)}}
+.lbl{font-size:14px;color:var(--mute);min-height:24px}
+.timer{font-weight:800;font-variant-numeric:tabular-nums;color:var(--deep);min-height:24px}
+.bubble{background:var(--soft);border-radius:16px 16px 16px 4px;padding:10px 12px;text-align:left;font-size:14px;margin-top:10px}
+.bubble small{display:block;color:var(--deep);font-weight:800;font-size:11px}
+textarea{width:100%;min-height:96px;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;font-size:14px;resize:vertical;background:#fffdfb;color:var(--ink)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{border-radius:24px;padding:10px 18px;font-weight:700;font-size:14px;border:1px solid var(--line);background:#fff;color:var(--deep)}
+.btn.p{background:var(--deep);color:#fff;border-color:var(--deep);box-shadow:0 4px 10px rgba(201,72,91,.3)}
+.btn.p:hover{background:#b23c4f}
+.btn.s{font-size:12px;padding:6px 12px}
+.msg{margin-top:10px;font-size:13px;background:var(--amber);border-radius:12px;padding:8px 10px;color:#6a4a10}
+.tip{font-size:12px;color:var(--mute);margin:6px 2px 12px}
+.rtitle{font-size:18px;text-align:center;margin:4px 0 12px}
+.rtitle .tm{color:var(--mute);font-size:14px;font-weight:600;margin-left:6px}
+.meter{background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.meter .h{display:flex;justify-content:space-between;font-weight:800;margin-bottom:6px}
+.bar{height:10px;border-radius:5px;background:var(--soft);overflow:hidden}
+.bar span{display:block;height:100%;border-radius:5px;background:var(--pink);width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.meter ul{list-style:none;padding:0;margin-top:8px;font-size:13px;color:#5d4249}
+.meter li::before{content:"・"}
+.note{background:var(--amber);border-radius:14px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+.note.ok{background:var(--green);color:var(--gtx)}
+.chip{display:inline-flex;align-items:center;gap:4px;margin:3px 4px 3px 0;padding:3px 10px;border-radius:12px;font-size:12px;background:#f3eceb;color:var(--mute)}
+.chip.y{background:var(--green);color:var(--gtx);font-weight:700}
+.chip b{font-size:11px}
+.tx{font-size:14px;line-height:1.9;word-break:break-word}
+.k{background:var(--green);color:var(--gtx);border-radius:6px;padding:1px 4px}
+.f{background:#ffe0e0;color:#a02a2a;border-radius:6px;padding:1px 4px;text-decoration:line-through}
+.legend{font-size:11px;color:var(--mute);margin-top:6px}
+.doc p{font-size:15px}
+.spk{font-size:12px;border:1px solid var(--line);border-radius:12px;padding:1px 8px;margin-left:6px;color:var(--deep);background:#fff}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">📞</span><span>SBAR <b>Call</b></span></div>
+  <button class="lang" id="langBtn" data-demo="lang-switch" data-i18n-aria="langAria"><span data-l="ja">日本語</span> / <span data-l="en">EN</span></button>
+</header>
+
+<main class="wrap">
+  <ol class="steps" aria-hidden="true"><li id="st0" data-i18n="st1"></li><li id="st1" data-i18n="st2"></li><li id="st2" data-i18n="st3"></li></ol>
+
+  <!-- HOME -->
+  <section id="sHome">
+    <div class="tag" data-i18n="tagline"></div>
+    <h1 data-i18n-html="heroTitle"></h1>
+    <p class="lead" data-i18n="heroDesc"></p>
+    <h2 data-i18n="chooseScene"></h2>
+    <div id="sceneList" data-demo="scene-list"></div>
+    <p class="more" data-i18n="sceneMore"></p>
+    <h2 data-i18n="sbarTitle"></h2>
+    <div class="sbar" id="sbarBox"></div>
+    <h2 data-i18n="recent"></h2>
+    <div class="card" id="histBox" data-demo="history"></div>
+    <button class="link" id="clearHist" data-demo="clear-history" data-i18n="clearHist"></button>
+  </section>
+
+  <!-- PRACTICE -->
+  <section id="sPractice" hidden>
+    <button class="link" id="backBtn" data-demo="back-home" data-i18n="back"></button>
+    <div class="alert"><div class="tag" data-i18n="scenarioLabel"></div><b id="alertT"></b><p id="alertL"></p></div>
+    <div class="grid">
+      <div class="card" id="chartCard">
+        <div class="row2"><h3 data-i18n="chartTitle" style="margin:0"></h3><button class="btn s" id="chartToggle" data-demo="chart-toggle"></button></div>
+        <ul class="chart" id="chartList" data-demo="chart"></ul>
+        <p class="hide" id="chartHid" hidden data-i18n="chartHidden"></p>
+        <p class="tip" data-i18n="tipSbar" style="margin:10px 0 0"></p>
+      </div>
+      <div>
+        <div class="card callbox">
+          <div class="status" id="callStatus"></div>
+          <button class="mic idle" id="mainBtn" data-demo="mic-button" data-i18n-aria="micAria"><span id="mainIco">📞</span></button>
+          <div class="lbl" id="mainLbl"></div>
+          <div class="timer" id="timer"></div>
+          <div class="bubble" id="docBubble" hidden><small data-i18n="doctorLabel"></small><span id="docGreet"></span></div>
+          <div class="msg" id="msg" role="status" data-demo="message" hidden></div>
+        </div>
+        <div class="card">
+          <h3 data-i18n="typeTitle"></h3>
+          <textarea id="ta" data-demo="report-input" data-i18n-ph="ph"></textarea>
+          <div class="btns">
+            <button class="btn s" id="sGood" data-demo="sample-good" data-i18n="sampleGood"></button>
+            <button class="btn s" id="sLong" data-demo="sample-long" data-i18n="sampleLong"></button>
+            <button class="btn s" id="clearBtn" data-demo="clear-text" data-i18n="clear"></button>
+          </div>
+          <div class="btns"><button class="btn p" id="evalBtn" data-demo="evaluate" data-i18n="evaluate"></button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="sResult" hidden>
+    <h2 class="rtitle"><span data-i18n="resultTitle"></span><span class="tm" id="resTime"></span></h2>
+    <div id="resMeters" data-demo="result-meters"></div>
+    <div class="note" id="resMissing" data-demo="missing-note"></div>
+    <div class="card"><h3 data-i18n="checkTitle"></h3><div id="resChips" data-demo="sbar-check"></div></div>
+    <div class="card"><h3 data-i18n="transcriptTitle"></h3><p class="tx" id="resText" data-demo="transcript"></p><p class="legend" data-i18n="legend"></p></div>
+    <div class="card doc"><h3>🩺 <span data-i18n="doctorReply"></span><button class="spk" id="spkBtn" data-demo="doctor-speak" data-i18n-aria="speakAria">🔊</button></h3><p id="resDoctor" data-demo="doctor-reply"></p></div>
+    <div class="btns"><button class="btn p" id="retryBtn" data-demo="retry" data-i18n="retry"></button><button class="btn" id="homeBtn" data-demo="to-home" data-i18n="toHome"></button></div>
+  </section>
+</main>
+
+<script>
+const I18N={
+ja:{
+ title:"SBAR Call｜緊急報告トレーニング",langAria:"言語を切り替える",
+ tagline:"緊急報告トレーニング",
+ heroTitle:"自分の声で、<span>すばやく</span>伝える。",
+ heroDesc:"産科の緊急場面で、医師にSBARで電話報告する練習です。優先順位と簡潔さをその場で評価します。",
+ st1:"1 場面",st2:"2 報告",st3:"3 評価",
+ chooseScene:"場面をえらぶ",sceneMore:"場面は今後ふえていきます",soon:"準備中",
+ ctgTitle:"CTGの判読と報告",ctgSub:"もうすぐ追加されます",
+ sbarTitle:"SBARとは",
+ sS:"状況",sSd:"いま何が起きているか",sB:"背景",sBd:"経過・これまでの情報",sA:"評価",sAd:"あなたの判断・バイタル",sR:"依頼",sRd:"何をしてほしいか",
+ recent:"最近の練習",noRecent:"まだ記録がありません。まずは1回やってみましょう。",clearHist:"記録を消す",
+ histRow:"優先順位 {p}　簡潔さ {b}　⏱{n}秒",
+ scenarioLabel:"SCENARIO 1",back:"← 場面にもどる",
+ chartTitle:"患者さんのカルテ",hideChart:"隠す",showChart:"見る",
+ chartHidden:"カルテを見ずに、覚えている範囲で話してみましょう。",
+ tipSbar:"ヒント：S→B→A→R の順で。いちばん危ない情報から言いましょう。",
+ stIdle:"電話をかける前",stRinging:"呼び出し中…",stConn:"● 通話中",
+ tapToCall:"タップして医師に電話",ringing:"呼び出し中…",tapToSpeak:"タップして話す",listening:"聞いています… 話し終えたらタップ",
+ micAria:"電話・マイクボタン",doctorLabel:"医師",
+ micUnsupported:"この端末では音声入力が使えません。下の文字入力をお使いください。",
+ micDenied:"マイクが使えませんでした。許可を確認するか、文字で入力してください。",
+ typeTitle:"文字で入力（予備）",ph:"ここに報告内容が表示されます。直接入力もできます。",
+ sampleGood:"お手本を入れる",sampleLong:"ダラダラ例を入れる",clear:"クリア",evaluate:"報告を評価する",
+ emptyMsg:"報告内容が空です。話すか、入力してください。",
+ resultTitle:"評価結果",meterPri:"優先順位",meterBri:"簡潔さ",
+ checkTitle:"SBARチェック",transcriptTitle:"あなたの報告",legend:"緑＝伝えられた情報　赤＝不要な言葉",
+ doctorReply:"医師の返事",speakAria:"医師の返事を読み上げる",retry:"もう一度練習",toHome:"場面にもどる",
+ missing:"⚠ 抜け：{list}",noMissing:"✅ 必要な情報はそろっています",secs:"{n}秒",
+ fbPriNoBleed:"出血量が伝わっていません。いちばん重要な情報です。",
+ fbPriGood:"出血量を早い段階で伝えられています。",
+ fbPriLate:"重要情報の中で出血が{n}番目。最初に言いましょう。",
+ fbPriReq:"最後に「来てほしい・指示がほしい」と依頼をはっきり伝えましょう。",
+ fbBrFiller:"「えーと」などの不要な言葉が{n}回ありました。",
+ fbBrLong:"約{n}秒でした。目標は{m}秒以内。要点だけに絞りましょう。",
+ fbBrGood:"短く、要点を押さえて言えています。",
+ fbShort:"短すぎて情報が足りません。",
+ errEmpty:"（報告なし）"
+},
+en:{
+ title:"SBAR Call | Emergency Report Training",langAria:"Switch language",
+ tagline:"EMERGENCY REPORT TRAINING",
+ heroTitle:"Say it clearly. <span>Say it fast.</span>",
+ heroDesc:"Practice phoning a doctor with an SBAR report in an obstetric emergency. Get instant feedback on priority and brevity.",
+ st1:"1 Scenario",st2:"2 Report",st3:"3 Results",
+ chooseScene:"Choose a scenario",sceneMore:"More scenarios are coming",soon:"Soon",
+ ctgTitle:"Reading and reporting CTG",ctgSub:"Coming soon",
+ sbarTitle:"What is SBAR?",
+ sS:"Situation",sSd:"What is happening now",sB:"Background",sBd:"History and course so far",sA:"Assessment",sAd:"Your findings and vitals",sR:"Request",sRd:"What you need done",
+ recent:"Recent practice",noRecent:"No practice yet. Give it a try!",clearHist:"Clear history",
+ histRow:"Priority {p}  Brevity {b}  ⏱{n}s",
+ scenarioLabel:"SCENARIO 1",back:"← Back to scenarios",
+ chartTitle:"Patient chart",hideChart:"Hide",showChart:"Show",
+ chartHidden:"Try reporting from memory, without looking at the chart.",
+ tipSbar:"Tip: go S → B → A → R, and lead with the most dangerous fact.",
+ stIdle:"Before the call",stRinging:"Calling…",stConn:"● On the call",
+ tapToCall:"Tap to call the doctor",ringing:"Calling…",tapToSpeak:"Tap to speak",listening:"Listening… tap when you're done",
+ micAria:"Call and microphone button",doctorLabel:"Doctor",
+ micUnsupported:"Voice input isn't available here. Please use the text box below.",
+ micDenied:"Couldn't use the microphone. Check permission or type instead.",
+ typeTitle:"Type instead (backup)",ph:"Your report appears here. You can also type.",
+ sampleGood:"Insert a model report",sampleLong:"Insert a rambling example",clear:"Clear",evaluate:"Evaluate my report",
+ emptyMsg:"Your report is empty. Speak or type first.",
+ resultTitle:"Results",meterPri:"Priority",meterBri:"Brevity",
+ checkTitle:"SBAR check",transcriptTitle:"Your report",legend:"Green = info given   Red = filler words",
+ doctorReply:"Doctor's reply",speakAria:"Read the doctor's reply aloud",retry:"Practice again",toHome:"Back to scenarios",
+ missing:"⚠ Missing: {list}",noMissing:"✅ All key information is included",secs:"{n} sec",
+ fbPriNoBleed:"Blood loss wasn't mentioned. It's the most important fact.",
+ fbPriGood:"You gave the blood loss early. Well done.",
+ fbPriLate:"Blood loss came {n}th among the key facts. Say it first.",
+ fbPriReq:"End with a clear request: what you need the doctor to do.",
+ fbBrFiller:"{n} filler word(s) like \"um\" were used.",
+ fbBrLong:"It took about {n} sec. Aim for under {m} sec. Keep only the essentials.",
+ fbBrGood:"Short and to the point.",
+ fbShort:"Too short to carry the key facts.",
+ errEmpty:"(no report)"
+}};
+
+const SCENES=[{
+ id:"pph",icon:"🩸",target:30,
+ title:{ja:"産後の大量出血",en:"Postpartum hemorrhage"},
+ sub:{ja:"新人向け・約1分で練習できます",en:"For new staff · about 1 minute"},
+ alert:{ja:"⚠ 産後30分・出血持続",en:"⚠ 30 min after birth · bleeding continues"},
+ line:{ja:"「605号室の患者さん、出血が止まりません」",en:"\"Room 605 — the patient's bleeding won't stop.\""},
+ greet:{ja:"「はい、産科当直。どうした？ 手短に」",en:"\"OB on call. What's going on? Be quick.\""},
+ ok:{ja:"「了解、すぐ行く。ルート確保して子宮収縮薬の準備、バイタルは5分ごとに」",en:"\"Got it, I'm on my way. Secure IV access, prepare uterotonics, vitals every 5 minutes.\""},
+ chart:[
+  {i:"🛏",ja:"605号室",en:"Room 605"},
+  {i:"👩",ja:"32歳・初産婦",en:"32 y/o, first birth"},
+  {i:"👶",ja:"経腟分娩・30分前",en:"Vaginal birth, 30 min ago"},
+  {i:"🩸",ja:"出血量 800ml（まだ続いている）",en:"Blood loss 800 ml (ongoing)"},
+  {i:"🫀",ja:"子宮が柔らかく、収縮が悪い",en:"Uterus soft, poor contraction"},
+  {i:"📉",ja:"血圧 90/50・脈拍 118",en:"BP 90/50, pulse 118"},
+  {i:"😟",ja:"顔色が悪く、冷汗あり",en:"Pale, cold sweat"}],
+ elements:[
+  {id:"who",l:"S",w:10,key:false,label:{ja:"患者の特定（部屋・年齢）",en:"Who (room, age)"},
+   ask:{ja:"「どの患者さん？ 部屋番号は？」",en:"\"Which patient? What room?\""},
+   ja:/\d{1,4}\s*号室|号室|\d+\s*歳|初産|経産|褥婦|患者|産後の(?:方|患者)/,
+   en:/room\s*\d+|\d+[- ]?(?:years?|yo|y\/o)|\bpatient\b|\bmother\b/},
+  {id:"bleed",l:"S",w:30,key:true,label:{ja:"出血量",en:"Blood loss"},
+   ask:{ja:"「出血は何mlだ？」",en:"\"How much blood loss?\""},
+   ja:/出血(?:量)?\s*(?:が|は|を|で)?\s*\d+\s*(?:ml|ミリ|cc)?|\d+\s*(?:ml|ミリ|cc)|大量出血|出血が?止まら|出血(?:が)?(?:多|持続|続)/i,
+   en:/(?:bleeding|blood loss|hemorrhage|haemorrhage)[^.,]{0,25}?\d+\s*(?:ml|cc|milliliters?)?|\d+\s*(?:ml|cc|milliliters?)\b|heavy bleeding|massive|won'?t stop|not stopping|\bhemorrhage\b|\bPPH\b|\bbleeding\b/i},
+  {id:"timing",l:"B",w:10,key:false,label:{ja:"経過時間（分娩後）",en:"Time since birth"},
+   ask:{ja:"",en:""},
+   ja:/分娩後|産後\s*\d+|出産後|\d+\s*分(?:前|後)|\d+\s*時間|経腟分娩|帝王切開|胎盤|分娩(?:に|が|し)/,
+   en:/\d+\s*(?:min(?:ute)?s?|hours?)\s*(?:ago|after|postpartum|since)|after (?:delivery|birth)|postpartum\s+\d+|\bdelivered\b|c-section|placenta/i},
+  {id:"uterus",l:"A",w:15,key:true,label:{ja:"子宮の収縮",en:"Uterine tone"},
+   ask:{ja:"「子宮の収縮はどう？」",en:"\"How's the uterus? Is it contracting?\""},
+   ja:/子宮(?!収縮薬)|弛緩|アトニー|収縮(?!薬)/,
+   en:/\buter(?:us|ine)\b|fundus|boggy|atony|contract/i},
+  {id:"vitals",l:"A",w:20,key:true,label:{ja:"バイタル（血圧・脈拍）",en:"Vitals (BP, pulse)"},
+   ask:{ja:"「バイタルは？ 血圧と脈拍を教えて」",en:"\"What are her vitals? BP and pulse?\""},
+   ja:/血圧|脈拍|心拍|バイタル|ショック|顔色|冷汗|意識|\d{2,3}\s*[\/]\s*\d{2,3}|サチュ|SpO2|脈\s*\d+|HR\s*\d+/i,
+   en:/blood pressure|\bBP\b|pulse|heart rate|\bHR\b|vitals?|shock|pale|sweat|conscious|spo2|\d{2,3}\s*\/\s*\d{2,3}/i},
+  {id:"request",l:"R",w:15,key:true,label:{ja:"依頼内容",en:"Your request"},
+   ask:{ja:"「で、私に何をしてほしい？ はっきり言って」",en:"\"So what do you need from me? Be specific.\""},
+   ja:/診察|診て|来て|きて|指示|お願い|オーダー|輸液|オキシトシン|応援|至急|コール|対応/,
+   en:/please (?:come|see|check|examine|order|assess)|come (?:now|right|to|and)|need you|orders?\b|\biv\b|fluids|oxytocin|uterotonics?|\bhelp\b|assess|examine|immediately|right away|could you|can you/i}
+ ],
+ samples:{
+  good:{ja:"605号室、産後30分の方です。出血が800mlで止まらず、子宮の収縮が悪いです。血圧90/50、脈拍118で顔色が悪いです。すぐに診察と子宮収縮薬の指示をお願いします。",
+        en:"Room 605, a patient 30 minutes after delivery. Bleeding is 800 ml and not stopping, and the uterus is soft with poor contraction. BP is 90 over 50, pulse 118, and she looks pale. Please come now and give orders for uterotonics."},
+  long:{ja:"えーと、あの、605号室の方なんですけど、えーと、朝から陣痛が来ていて、順調に進んでいたんですが、先ほど分娩になりまして、あの、胎盤も無事に出て、お子さんも元気で、それで、血圧は90/50くらいで、えっと、子宮もちょっと柔らかい感じがして、それで出血が、まあ、測ったら800mlでした。あの、できれば診察をお願いしたいです。",
+        en:"Um, so, uh, Room 605, she delivered this morning after a long labor, and the baby is doing fine, and, um, the placenta came out okay, and, you know, her BP is about 90 over 50, and the uterus feels a bit soft, and then, uh, the bleeding was, you know, 800 ml when we measured it. So, um, could you please come and see her if you have time?"}
+ }
+}];
+
+/* ---------- state & helpers ---------- */
+const $=s=>document.querySelector(s);
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let lang="en",screen="home",sc=SCENES[0],call="idle",listening=false,micSec=null,t0=0,tick=null,rec=null,chartHidden=false,result=null,ringTO=null;
+const t=(k,p)=>{let s=(I18N[lang][k]!==undefined?I18N[lang][k]:k);if(p)for(const x in p)s=s.split("{"+x+"}").join(p[x]);return s};
+const L=o=>o[lang];
+const stars=n=>"★".repeat(n)+"☆".repeat(5-n);
+const rx=(e,f)=>new RegExp(e.ja.source+"|"+e.en.source,f||"i");
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function initLang(){
+  if(window.APP_LANG==="ja"||window.APP_LANG==="en")return window.APP_LANG;
+  try{const q=new URLSearchParams(location.search).get("lang");if(q==="ja"||q==="en")return q}catch(e){}
+  const s=store("lang");if(s==="ja"||s==="en")return s;
+  return "en";
+}
+function msg(text){const m=$("#msg");if(!text){m.hidden=true;return}m.textContent=text;m.hidden=false}
+
+/* ---------- i18n apply ---------- */
+function applyLang(){
+  document.documentElement.lang=lang;document.title=t("title");
+  document.querySelectorAll("[data-i18n]").forEach(e=>e.textContent=t(e.dataset.i18n));
+  document.querySelectorAll("[data-i18n-html]").forEach(e=>e.innerHTML=t(e.dataset.i18nHtml));
+  document.querySelectorAll("[data-i18n-ph]").forEach(e=>e.placeholder=t(e.dataset.i18nPh));
+  document.querySelectorAll("[data-i18n-aria]").forEach(e=>e.setAttribute("aria-label",t(e.dataset.i18nAria)));
+  document.querySelectorAll("#langBtn [data-l]").forEach(e=>e.classList.toggle("on",e.dataset.l===lang));
+  renderHome();renderPractice();if(result)renderResult();
+}
+
+/* ---------- screens ---------- */
+function setScreen(n){
+  screen=n;
+  $("#sHome").hidden=n!=="home";$("#sPractice").hidden=n!=="practice";$("#sResult").hidden=n!=="result";
+  const idx={home:0,practice:1,result:2}[n];
+  [0,1,2].forEach(i=>$("#st"+i).classList.toggle("on",i<=idx));
+  window.scrollTo(0,0);
+}
+
+/* ---------- home ---------- */
+function renderHome(){
+  const list=$("#sceneList");list.innerHTML="";
+  SCENES.forEach(s=>{
+    const b=document.createElement("button");b.className="scene";b.dataset.demo="scene-"+s.id;
+    b.innerHTML='<span class="ic">'+s.icon+'</span><span><b></b><small></small></span><span class="go">›</span>';
+    b.querySelector("b").textContent=L(s.title);b.querySelector("small").textContent=L(s.sub);
+    b.onclick=()=>openScene(s);list.appendChild(b);
+  });
+  /* placeholder for a future scene (CTG): add an object to SCENES to enable it */
+  const f=document.createElement("div");f.className="scene off";f.dataset.demo="scene-ctg-soon";
+  f.innerHTML='<span class="ic">📈</span><span><b></b><small></small></span><span class="badge"></span>';
+  f.querySelector("b").textContent=t("ctgTitle");f.querySelector("small").textContent=t("ctgSub");f.querySelector(".badge").textContent=t("soon");
+  list.appendChild(f);
+  const box=$("#sbarBox");box.innerHTML="";
+  [["S","sS","sSd"],["B","sB","sBd"],["A","sA","sAd"],["R","sR","sRd"]].forEach(a=>{
+    const d=document.createElement("div");d.innerHTML="<b>"+a[0]+"</b><strong></strong><br><span></span>";
+    d.querySelector("strong").textContent=t(a[1]);d.querySelector("span").textContent=t(a[2]);box.appendChild(d);
+  });
+  const h=getHist(),hb=$("#histBox");hb.innerHTML="";
+  if(!h.length){hb.textContent=t("noRecent");hb.style.color="var(--mute)";hb.style.fontSize="13px"}
+  else{hb.style.color="";h.slice(0,4).forEach(x=>{
+    const r=document.createElement("div");r.className="hist";
+    const sp=document.createElement("span");sp.innerHTML=esc(t("histRow",{p:"@@P",b:"@@B",n:Math.round(x.n)})).replace("@@P",'<span class="star">'+stars(x.p)+"</span>").replace("@@B",'<span class="star">'+stars(x.b)+"</span>");
+    r.appendChild(sp);hb.appendChild(r)})}
+  $("#clearHist").hidden=!h.length;
+}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function getHist(){try{return JSON.parse(store("sbarHist")||"[]")}catch(e){return[]}}
+function addHist(x){const h=getHist();h.unshift(x);store("sbarHist",JSON.stringify(h.slice(0,10)))}
+
+/* ---------- practice ---------- */
+function openScene(s){sc=s;resetPractice();setScreen("practice");renderPractice()}
+function resetPractice(){
+  stopListen(true);clearTimeout(ringTO);call="idle";micSec=null;$("#ta").value="";msg("");$("#timer").textContent="";callUI();
+}
+function renderPractice(){
+  $("#alertT").textContent=L(sc.alert);$("#alertL").textContent=L(sc.line);
+  const ul=$("#chartList");ul.innerHTML="";
+  sc.chart.forEach(c=>{const li=document.createElement("li");li.innerHTML="<i>"+c.i+"</i><span></span>";li.querySelector("span").textContent=L(c);ul.appendChild(li)});
+  ul.hidden=chartHidden;$("#chartHid").hidden=!chartHidden;
+  $("#chartToggle").textContent=chartHidden?t("showChart"):t("hideChart");
+  $("#docGreet").textContent=L(sc.greet);
+  callUI();
+}
+function callUI(){
+  const st=listening?"listen":call;
+  const map={idle:["📞","tapToCall","stIdle"],ringing:["📞","ringing","stRinging"],connected:["🎤","tapToSpeak","stConn"],listen:["⏹","listening","stConn"]};
+  const m=map[st];
+  $("#mainBtn").className="mic "+st;$("#mainIco").textContent=m[0];
+  $("#mainLbl").textContent=t(m[1]);$("#callStatus").textContent=t(m[2]);
+  $("#docBubble").hidden=!(call==="connected");
+}
+$("#mainBtn").onclick=()=>{
+  if(call==="idle"){
+    call="ringing";callUI();msg("");
+    ringTO=setTimeout(()=>{call="connected";callUI()},1300);
+  }else if(call==="connected"){listening?stopListen():startListen()}
+};
+function fmt(s){s=Math.floor(s);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function startListen(){
+  msg("");
+  if(!SR){msg(t("micUnsupported"));return}
+  try{
+    rec=new SR();rec.lang=lang==="ja"?"ja-JP":"en-US";rec.continuous=true;rec.interimResults=true;
+    $("#ta").value="";
+    rec.onresult=e=>{let s="";for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;$("#ta").value=s};
+    rec.onerror=e=>{if(e.error!=="no-speech"&&e.error!=="aborted")msg(t("micDenied"));stopListen()};
+    rec.onend=()=>{if(listening)stopListen()};
+    rec.start();listening=true;t0=Date.now();micSec=null;
+    tick=setInterval(()=>{$("#timer").textContent="⏱ "+fmt((Date.now()-t0)/1000)},250);
+    $("#timer").textContent="⏱ 0:00";callUI();
+  }catch(e){listening=false;msg(t("micUnsupported"))}
+}
+function stopListen(quiet){
+  if(!listening)return;
+  listening=false;clearInterval(tick);micSec=(Date.now()-t0)/1000;
+  try{rec&&rec.stop()}catch(e){}
+  callUI();
+}
+$("#ta").addEventListener("input",()=>{micSec=null});
+$("#sGood").onclick=()=>{stopListen();$("#ta").value=sc.samples.good[lang];micSec=null;msg("")};
+$("#sLong").onclick=()=>{stopListen();$("#ta").value=sc.samples.long[lang];micSec=null;msg("")};
+$("#clearBtn").onclick=()=>{$("#ta").value="";micSec=null;msg("")};
+$("#chartToggle").onclick=()=>{chartHidden=!chartHidden;renderPractice()};
+$("#backBtn").onclick=()=>{resetPractice();setScreen("home")};
+$("#evalBtn").onclick=()=>{
+  stopListen();
+  const txt=$("#ta").value.trim();
+  if(!txt){msg(t("emptyMsg"));return}
+  result=evaluate(txt,micSec);
+  addHist({p:result.pStars,b:result.bStars,n:result.dur});
+  setScreen("result");renderResult();
+};
+
+/* ---------- scoring ---------- */
+const FILL=/えーっと|えーと|えっと|ええと|えー|あのー|あのう|あの(?=[、,\s])|うーん|なんか|まあ|\b(?:um+|uh+|er+m?|you know|basically)\b/gi;
+function evaluate(raw,mic){
+  const text=raw.normalize("NFKC");
+  const found={},idx={};
+  sc.elements.forEach(e=>{const m=rx(e).exec(text);found[e.id]=!!m;idx[e.id]=m?m.index:-1});
+  let score=0;sc.elements.forEach(e=>{if(found[e.id])score+=e.w});
+  const keys=sc.elements.filter(e=>e.key&&found[e.id]).sort((a,b)=>idx[a.id]-idx[b.id]);
+  const rank=found.bleed?keys.findIndex(e=>e.id==="bleed")+1:0;
+  if(rank>1)score-=Math.min(30,(rank-1)*10);
+  score=Math.max(0,score);
+  const fillers=(text.match(FILL)||[]).length;
+  const cjk=(text.match(/[\u3040-\u30ff\u4e00-\u9fff]/g)||[]).length;
+  const words=(text.replace(/[\u3040-\u30ff\u4e00-\u9fff]/g," ").match(/[A-Za-z0-9'\/]+/g)||[]).length;
+  const est=cjk/5+words/2.5;
+  const dur=mic&&mic>1?mic:Math.max(3,est);
+  let b=100-Math.min(40,fillers*10)-(dur>sc.target?Math.min(50,(dur-sc.target)*2):0);
+  const tooShort=text.replace(/\s/g,"").length<15;
+  if(tooShort)b=Math.min(b,40);
+  b=Math.max(0,b);
+  const st=v=>Math.max(1,Math.min(5,Math.round(v/20)));
+  return {text,found,idx,rank,fillers,dur,tooShort,pScore:score,bScore:b,pStars:st(score),bStars:st(b)};
+}
+
+/* ---------- result ---------- */
+function meter(name,n,score,lines){
+  const d=document.createElement("div");d.className="meter";
+  d.innerHTML='<div class="h"><span></span><span class="star"></span></div><div class="bar"><span></span></div><ul></ul>';
+  d.querySelector(".h span").textContent=name;d.querySelector(".star").textContent=stars(n);
+  lines.forEach(l=>{const li=document.createElement("li");li.textContent=l;d.querySelector("ul").appendChild(li)});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{d.querySelector(".bar span").style.width=Math.max(6,score)+"%"}));
+  return d;
+}
+function renderResult(){
+  const r=result;if(!r)return;
+  $("#resTime").textContent="⏱ "+t("secs",{n:Math.round(r.dur)});
+  const pl=[],bl=[];
+  if(!r.found.bleed)pl.push(t("fbPriNoBleed"));
+  else if(r.rank<=1)pl.push(t("fbPriGood"));
+  else pl.push(t("fbPriLate",{n:r.rank}));
+  if(!r.found.request)pl.push(t("fbPriReq"));
+  if(r.fillers>0)bl.push(t("fbBrFiller",{n:r.fillers}));
+  if(r.dur>sc.target)bl.push(t("fbBrLong",{n:Math.round(r.dur),m:sc.target}));
+  if(r.tooShort)bl.push(t("fbShort"));
+  if(!bl.length)bl.push(t("fbBrGood"));
+  const mt=$("#resMeters");mt.innerHTML="";
+  mt.appendChild(meter(t("meterPri"),r.pStars,r.pScore,pl));
+  mt.appendChild(meter(t("meterBri"),r.bStars,r.bScore,bl));
+  const miss=sc.elements.filter(e=>!r.found[e.id]);
+  const mn=$("#resMissing");
+  mn.className="note"+(miss.length?"":" ok");
+  mn.textContent=miss.length?t("missing",{list:miss.map(e=>L(e.label)).join(lang==="ja"?"、":", ")}):t("noMissing");
+  const chips=$("#resChips");chips.innerHTML="";
+  sc.elements.forEach(e=>{const c=document.createElement("span");c.className="chip"+(r.found[e.id]?" y":"");
+    c.innerHTML="<b>"+e.l+"</b><span></span>";c.querySelector("span").textContent=(r.found[e.id]?"✓ ":"")+L(e.label);chips.appendChild(c)});
+  /* highlighted transcript */
+  const ranges=[];
+  sc.elements.forEach(e=>{const g=rx(e,"gi");let m;while((m=g.exec(r.text))){if(!m[0].length){g.lastIndex++;continue}ranges.push({s:m.index,e:m.index+m[0].length,c:"k"})}});
+  const fg=new RegExp(FILL.source,"gi");let m;while((m=fg.exec(r.text)))ranges.push({s:m.index,e:m.index+m[0].length,c:"f"});
+  ranges.sort((a,b)=>a.s-b.s||(a.c==="f"?-1:1));
+  const tx=$("#resText");tx.innerHTML="";let pos=0;
+  ranges.forEach(g=>{if(g.s<pos)return;tx.appendChild(document.createTextNode(r.text.slice(pos,g.s)));
+    const sp=document.createElement("span");sp.className=g.c;sp.textContent=r.text.slice(g.s,g.e);tx.appendChild(sp);pos=g.e});
+  tx.appendChild(document.createTextNode(r.text.slice(pos)));
+  const ask=sc.elements.find(e=>!r.found[e.id]&&e.ask[lang]);
+  r.reply=ask?L(ask.ask):L(sc.ok);
+  $("#resDoctor").textContent=r.reply;
+}
+$("#spkBtn").onclick=()=>{
+  try{const u=new SpeechSynthesisUtterance($("#resDoctor").textContent);u.lang=lang==="ja"?"ja-JP":"en-US";u.rate=1.1;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}
+};
+$("#retryBtn").onclick=()=>{resetPractice();setScreen("practice");renderPractice()};
+$("#homeBtn").onclick=()=>{resetPractice();setScreen("home");renderHome()};
+$("#clearHist").onclick=()=>{store("sbarHist","[]");renderHome()};
+$("#langBtn").onclick=()=>{lang=lang==="ja"?"en":"ja";store("lang",lang);applyLang()};
+
+lang=initLang();
+applyLang();setScreen("home");
+</script>
+</body>
+</html>
