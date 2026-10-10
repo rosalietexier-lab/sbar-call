@@ -3,6 +3,7 @@
 
 
 - ▶ **Try it:** https://rosalietexier-lab.github.io/sbar-call/
+- 🎬 **Demo video:** https://rosalietexier-lab.github.io/sbar-call/demo.mp4
 
 ## About
 
